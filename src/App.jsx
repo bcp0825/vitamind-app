@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { Activity, Apple, Brain, CreditCard, Dumbbell, Home, MessageCircle, Moon, Send, ShieldCheck, Smile, Sparkles, TrendingUp, Users, Waves } from "lucide-react";
+import { Activity, Apple, Brain, CreditCard, Dumbbell, Home, MessageCircle, Moon, Send, ShieldCheck, Smile, Sparkles, TrendingUp, Users, Waves, CalendarDays, BarChart3 } from "lucide-react";
 
 const NAVY = "#071E4A";
 
@@ -57,6 +57,81 @@ const meals = [
   { title: "Focus Fuel Meal", desc: "Lean protein, rice, vegetables, and hydration reminder.", tag: "ADHD" }
 ];
 
+function buildNutritionPlan({ depression, anxiety, stress, motivation, energy, sleep }) {
+  if (anxiety >= 7 || stress >= 7) {
+    return {
+      title: "Calm & Recovery Nutrition Plan",
+      focus: "Lower stress, support calm, and stabilize energy.",
+      meals: [
+        "Breakfast: Greek yogurt, berries, oats, and water",
+        "Lunch: Salmon or chicken, sweet potato, and greens",
+        "Snack: Almonds, banana, or dark chocolate square",
+        "Dinner: Turkey, rice, vegetables, and herbal tea"
+      ],
+      avoid: "Limit excess caffeine, skipped meals, and high-sugar snacks today.",
+      hydration: "Aim for steady water intake throughout the day."
+    };
+  }
+
+  if (depression >= 7 || motivation <= 4) {
+    return {
+      title: "Mood-Lift Nutrition Plan",
+      focus: "Support mood, energy, and motivation with simple meals.",
+      meals: [
+        "Breakfast: Eggs, toast, fruit, and water",
+        "Lunch: Chicken bowl with rice, beans, and vegetables",
+        "Snack: Protein smoothie or peanut butter with apple",
+        "Dinner: Lean protein, potatoes, and colorful vegetables"
+      ],
+      avoid: "Avoid skipping meals. Keep food simple and realistic today.",
+      hydration: "Add one extra glass of water with each meal."
+    };
+  }
+
+  if (energy <= 4 || sleep <= 5) {
+    return {
+      title: "Low-Energy Recovery Meal Plan",
+      focus: "Refuel the body without overloading it.",
+      meals: [
+        "Breakfast: Oatmeal, banana, and protein",
+        "Lunch: Turkey wrap, fruit, and water",
+        "Snack: Greek yogurt or boiled eggs",
+        "Dinner: Chicken soup, rice, and vegetables"
+      ],
+      avoid: "Avoid heavy late meals and too much caffeine late in the day.",
+      hydration: "Focus on hydration early in the day."
+    };
+  }
+
+  if (motivation >= 8 && energy >= 8) {
+    return {
+      title: "Performance Fuel Nutrition Plan",
+      focus: "Fuel strength, movement, and consistency.",
+      meals: [
+        "Breakfast: Eggs, oats, berries, and water",
+        "Lunch: Lean protein, rice, vegetables, and avocado",
+        "Snack: Protein shake or cottage cheese with fruit",
+        "Dinner: Steak or chicken, potatoes, greens, and water"
+      ],
+      avoid: "Avoid under-eating on high-output days.",
+      hydration: "Add electrolytes if sweating heavily."
+    };
+  }
+
+  return {
+    title: "Balanced Wellness Nutrition Plan",
+    focus: "Maintain stable mood, energy, and wellness habits.",
+    meals: [
+      "Breakfast: Protein, fruit, and whole-grain carbs",
+      "Lunch: Lean protein, vegetables, and healthy carbs",
+      "Snack: Nuts, yogurt, or fruit",
+      "Dinner: Balanced plate with protein, greens, and water"
+    ],
+    avoid: "Avoid all-or-nothing eating. Keep meals consistent.",
+    hydration: "Aim for regular water intake through the day."
+  };
+}
+
 function App() {
   const [screen, setScreen] = useState("checkin");
   const [depression, setDepression] = useState(4);
@@ -75,6 +150,13 @@ function App() {
     { name: "Jordan", topic: "Fitness", text: "Today I chose a 15-minute walk instead of skipping movement completely.", replies: 9, time: "1h ago" },
     { name: "Chris", topic: "Nutrition", text: "Share your favorite mood-supporting meal ideas.", replies: 14, time: "2h ago" }
   ]);
+  const [history, setHistory] = useState([
+    { date: "Mon", depression: 5, anxiety: 6, stress: 7, motivation: 4, energy: 5, sleep: 6 },
+    { date: "Tue", depression: 4, anxiety: 5, stress: 6, motivation: 5, energy: 6, sleep: 7 },
+    { date: "Wed", depression: 6, anxiety: 7, stress: 7, motivation: 4, energy: 4, sleep: 5 },
+    { date: "Thu", depression: 4, anxiety: 4, stress: 5, motivation: 6, energy: 7, sleep: 7 },
+    { date: "Fri", depression: 3, anxiety: 4, stress: 4, motivation: 7, energy: 7, sleep: 8 }
+  ]);
 
   const mode = useMemo(() => {
     if (stress >= 7 || anxiety >= 7 || depression >= 7 || energy <= 4 || sleep <= 5) return "recovery";
@@ -83,6 +165,14 @@ function App() {
   }, [depression, anxiety, stress, motivation, energy, sleep]);
 
   const plan = workouts[mode];
+  const nutritionPlan = useMemo(() => buildNutritionPlan({ depression, anxiety, stress, motivation, energy, sleep }), [depression, anxiety, stress, motivation, energy, sleep]);
+
+  function saveCheckin() {
+    const today = new Date().toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+    const entry = { date: today, depression, anxiety, stress, motivation, energy, sleep };
+    setHistory(prev => [entry, ...prev.filter(item => item.date !== today)]);
+    setScreen("home");
+  }
 
   function send() {
     if (!input.trim()) return;
@@ -112,6 +202,7 @@ function App() {
               ["website", Sparkles, "Website"],
               ["home", Home, "Dashboard"],
               ["checkin", Smile, "Check-In"],
+              ["progress", BarChart3, "Progress"],
               ["fitness", Dumbbell, "Fitness"],
               ["nutrition", Apple, "Nutrition"],
               ["coach", MessageCircle, "AI Coach"],
@@ -126,10 +217,11 @@ function App() {
 
           <main className="md:col-span-3">
             {screen === "website" && <Website setScreen={setScreen} />}
-            {screen === "home" && <HomeScreen depression={depression} anxiety={anxiety} stress={stress} motivation={motivation} sleep={sleep} plan={plan} setScreen={setScreen} />}
-            {screen === "checkin" && <Checkin depression={depression} setDepression={setDepression} anxiety={anxiety} setAnxiety={setAnxiety} stress={stress} setStress={setStress} motivation={motivation} setMotivation={setMotivation} energy={energy} setEnergy={setEnergy} sleep={sleep} setSleep={setSleep} setScreen={setScreen} />}
-            {screen === "fitness" && <Fitness plan={plan} mode={mode} />}
-            {screen === "nutrition" && <Nutrition />}
+            {screen === "home" && <HomeScreen depression={depression} anxiety={anxiety} stress={stress} motivation={motivation} sleep={sleep} plan={plan} nutritionPlan={nutritionPlan} setScreen={setScreen} />}
+            {screen === "checkin" && <Checkin depression={depression} setDepression={setDepression} anxiety={anxiety} setAnxiety={setAnxiety} stress={stress} setStress={setStress} motivation={motivation} setMotivation={setMotivation} energy={energy} setEnergy={setEnergy} sleep={sleep} setSleep={setSleep} saveCheckin={saveCheckin} />}
+            {screen === "progress" && <Progress history={history} />}
+            {screen === "fitness" && <Fitness plan={plan} mode={mode} depression={depression} anxiety={anxiety} stress={stress} motivation={motivation} energy={energy} sleep={sleep} />}
+            {screen === "nutrition" && <Nutrition nutritionPlan={nutritionPlan} depression={depression} anxiety={anxiety} stress={stress} motivation={motivation} energy={energy} sleep={sleep} />}
             {screen === "coach" && <Coach messages={messages} input={input} setInput={setInput} send={send} />}
             {screen === "community" && <Community posts={posts} setPosts={setPosts} />}
             {screen === "pricing" && <Pricing subscribed={subscribed} setSubscribed={setSubscribed} />}
@@ -191,8 +283,8 @@ function Website({ setScreen }) {
   );
 }
 
-function HomeScreen({ depression, anxiety, stress, motivation, sleep, plan, setScreen }) {
-  const suggestedMeal = stress >= 7 || anxiety >= 7 ? "Stress-support foods with hydration and magnesium-rich snacks." : depression >= 6 ? "High-protein balanced meals to support mood and energy." : "Balanced protein-focused meals to maintain momentum.";
+function HomeScreen({ depression, anxiety, stress, motivation, sleep, plan, nutritionPlan, setScreen }) {
+  const suggestedMeal = nutritionPlan.focus;
 
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
@@ -228,7 +320,7 @@ function Action({ title, icon: Icon, text, onClick }) {
   return <Card className="p-5 hover:shadow-md transition cursor-pointer" onClick={onClick}><div className="h-11 w-11 rounded-2xl bg-gradient-to-br from-blue-50 to-teal-50 flex items-center justify-center mb-4"><Icon className="text-blue-600" /></div><h3 className="text-xl font-black mb-1">{title}</h3><p className="text-slate-500">{text}</p></Card>;
 }
 
-function Checkin({ depression, setDepression, anxiety, setAnxiety, stress, setStress, motivation, setMotivation, energy, setEnergy, sleep, setSleep, setScreen }) {
+function Checkin({ depression, setDepression, anxiety, setAnxiety, stress, setStress, motivation, setMotivation, energy, setEnergy, sleep, setSleep, saveCheckin }) {
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
       <Card className="p-6">
@@ -258,7 +350,7 @@ function Checkin({ depression, setDepression, anxiety, setAnxiety, stress, setSt
           <Slider label="Sleep hours" value={sleep} setValue={setSleep} min={3} max={10} suffix=" hrs" />
         </CheckCard>
 
-        <Button onClick={() => setScreen("home")} className="w-full mt-2">Generate My Wellness Plan</Button>
+        <Button onClick={saveCheckin} className="w-full mt-2">Save Check-In & Generate My Wellness Plan</Button>
       </Card>
     </motion.div>
   );
@@ -272,12 +364,181 @@ function Slider({ label, value, setValue, min = 1, max = 10, suffix = "/10" }) {
   return <div className="mb-6"><div className="flex justify-between mb-2"><span className="font-bold">{label}</span><span className="font-black text-blue-700">{value}{suffix}</span></div><input className="w-full accent-blue-600" type="range" min={min} max={max} value={value} onChange={e => setValue(Number(e.target.value))} /></div>;
 }
 
-function Fitness({ plan, mode }) {
-  return <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}><Card className="p-6"><p className="text-blue-600 font-bold uppercase text-sm">{mode} mode</p><h2 className="text-4xl font-black mb-2">{plan.title}</h2><p className="text-slate-500 mb-5">{plan.note}</p><div className="space-y-3">{plan.items.map((item, i) => <div key={item} className="flex items-center gap-3 rounded-2xl bg-blue-50 p-4"><div className="h-9 w-9 rounded-full bg-blue-600 text-white flex items-center justify-center font-black">{i + 1}</div><span className="font-semibold">{item}</span></div>)}</div></Card></motion.div>;
+function Progress({ history }) {
+  const latest = history[0];
+  const weekly = history.slice(0, 7);
+  const average = key => Math.round(weekly.reduce((sum, item) => sum + item[key], 0) / weekly.length);
+
+  const rows = [
+    ["Depression", "depression", "text-indigo-600"],
+    ["Anxiety", "anxiety", "text-sky-600"],
+    ["Stress", "stress", "text-purple-600"],
+    ["Motivation", "motivation", "text-teal-600"],
+    ["Energy", "energy", "text-blue-600"],
+    ["Sleep", "sleep", "text-slate-700"]
+  ];
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
+      <Card className="p-6 bg-gradient-to-r from-blue-700 via-sky-500 to-teal-400 text-white border-none shadow-xl shadow-blue-100">
+        <p className="text-blue-100 font-semibold mb-2">Weekly Wellness Tracking</p>
+        <h2 className="text-4xl font-black mb-3">Your Check-In History</h2>
+        <p className="text-blue-50 max-w-2xl">Review daily ratings, compare weekly patterns, and look back at past mental and physical wellness scores.</p>
+      </Card>
+
+      {latest && (
+        <div className="grid md:grid-cols-3 gap-4">
+          <Card className="p-5">
+            <CalendarDays className="text-blue-600 mb-3" />
+            <p className="text-sm text-slate-500">Latest Check-In</p>
+            <p className="text-2xl font-black">{latest.date}</p>
+          </Card>
+          <Card className="p-5">
+            <Brain className="text-sky-600 mb-3" />
+            <p className="text-sm text-slate-500">Weekly Anxiety Avg</p>
+            <p className="text-2xl font-black">{average("anxiety")}/10</p>
+          </Card>
+          <Card className="p-5">
+            <Moon className="text-indigo-600 mb-3" />
+            <p className="text-sm text-slate-500">Weekly Sleep Avg</p>
+            <p className="text-2xl font-black">{average("sleep")} hrs</p>
+          </Card>
+        </div>
+      )}
+
+      <Card className="p-6">
+        <h3 className="text-2xl font-black mb-4">7-Day Rating Overview</h3>
+        <div className="space-y-5">
+          {rows.map(([label, key, color]) => (
+            <div key={key}>
+              <div className="flex justify-between mb-2">
+                <span className="font-bold">{label}</span>
+                <span className={`font-black ${color}`}>{average(key)}{key === "sleep" ? " hrs" : "/10"}</span>
+              </div>
+              <div className="grid grid-cols-7 gap-2">
+                {weekly.map((item, i) => (
+                  <div key={`${key}-${i}`} className="rounded-xl bg-blue-50 p-2 text-center border border-blue-100">
+                    <div className="text-xs text-slate-500 mb-1">{item.date.split(" ")[0]}</div>
+                    <div className={`text-lg font-black ${color}`}>{item[key]}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      <Card className="p-6">
+        <h3 className="text-2xl font-black mb-4">Past Check-Ins</h3>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="border-b border-blue-100 text-slate-500 text-sm">
+                <th className="py-3 pr-4">Date</th>
+                <th className="py-3 pr-4">Depression</th>
+                <th className="py-3 pr-4">Anxiety</th>
+                <th className="py-3 pr-4">Stress</th>
+                <th className="py-3 pr-4">Motivation</th>
+                <th className="py-3 pr-4">Energy</th>
+                <th className="py-3 pr-4">Sleep</th>
+              </tr>
+            </thead>
+            <tbody>
+              {history.map((item, i) => (
+                <tr key={`${item.date}-${i}`} className="border-b border-blue-50">
+                  <td className="py-3 pr-4 font-bold">{item.date}</td>
+                  <td className="py-3 pr-4">{item.depression}/10</td>
+                  <td className="py-3 pr-4">{item.anxiety}/10</td>
+                  <td className="py-3 pr-4">{item.stress}/10</td>
+                  <td className="py-3 pr-4">{item.motivation}/10</td>
+                  <td className="py-3 pr-4">{item.energy}/10</td>
+                  <td className="py-3 pr-4">{item.sleep} hrs</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+    </motion.div>
+  );
 }
 
-function Nutrition() {
-  return <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}><Card className="p-6"><h2 className="text-3xl font-black mb-2">Nutrition Guidance</h2><p className="text-slate-500 mb-5">Food suggestions to support energy, mood, focus, and weight loss.</p><div className="grid md:grid-cols-3 gap-4">{meals.map(m => <div key={m.title} className="rounded-2xl bg-gradient-to-br from-blue-50 to-teal-50 p-5 border border-blue-100"><span className="text-xs font-black text-blue-700 uppercase">{m.tag}</span><h3 className="font-black text-lg my-2">{m.title}</h3><p className="text-slate-600">{m.desc}</p></div>)}</div></Card></motion.div>;
+function Fitness({ plan, mode, depression, anxiety, stress, motivation, energy, sleep }) {
+  const reason = mode === "recovery"
+    ? "Your check-in showed higher stress, anxiety, depression, lower energy, or lower sleep. Vitamind adjusted your workout to recovery mode."
+    : mode === "push"
+    ? "Your check-in showed strong motivation, high energy, and lower stress. Vitamind adjusted your workout to a stronger training day."
+    : "Your check-in showed a balanced range, so Vitamind created a steady workout focused on consistency.";
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
+      <Card className="p-6 bg-gradient-to-r from-blue-700 via-sky-500 to-teal-400 text-white border-none shadow-xl shadow-blue-100">
+        <p className="text-blue-100 font-bold uppercase text-sm">{mode} mode</p>
+        <h2 className="text-4xl font-black mb-2">{plan.title}</h2>
+        <p className="text-blue-50 mb-5">{plan.note}</p>
+        <p className="text-sm bg-white/20 rounded-2xl p-4">{reason}</p>
+      </Card>
+
+      <div className="grid md:grid-cols-3 gap-4">
+        <Metric icon={Activity} label="Stress" value={`${stress}/10`} color="text-purple-600" bg="bg-purple-50" />
+        <Metric icon={TrendingUp} label="Energy" value={`${energy}/10`} color="text-blue-600" bg="bg-blue-50" />
+        <Metric icon={Moon} label="Sleep" value={`${sleep} hrs`} color="text-indigo-600" bg="bg-indigo-50" />
+      </div>
+
+      <Card className="p-6">
+        <h3 className="text-2xl font-black mb-4">Today's Workout Steps</h3>
+        <div className="space-y-3">
+          {plan.items.map((item, i) => (
+            <div key={item} className="flex items-center gap-3 rounded-2xl bg-blue-50 p-4">
+              <div className="h-9 w-9 rounded-full bg-blue-600 text-white flex items-center justify-center font-black">{i + 1}</div>
+              <span className="font-semibold">{item}</span>
+            </div>
+          ))}
+        </div>
+      </Card>
+    </motion.div>
+  );
+}
+
+function Nutrition({ nutritionPlan, depression, anxiety, stress, motivation, energy, sleep }) {
+  return (
+    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
+      <Card className="p-6 bg-gradient-to-r from-blue-700 via-sky-500 to-teal-400 text-white border-none shadow-xl shadow-blue-100">
+        <p className="text-blue-100 font-semibold mb-2">Nutrition Based on Your Check-In</p>
+        <h2 className="text-4xl font-black mb-3">{nutritionPlan.title}</h2>
+        <p className="text-blue-50 max-w-2xl">{nutritionPlan.focus}</p>
+      </Card>
+
+      <div className="grid md:grid-cols-3 gap-4">
+        <Metric icon={Brain} label="Anxiety" value={`${anxiety}/10`} color="text-sky-600" bg="bg-sky-50" />
+        <Metric icon={Activity} label="Stress" value={`${stress}/10`} color="text-purple-600" bg="bg-purple-50" />
+        <Metric icon={TrendingUp} label="Energy" value={`${energy}/10`} color="text-teal-600" bg="bg-teal-50" />
+      </div>
+
+      <Card className="p-6">
+        <h3 className="text-2xl font-black mb-4">Today's Meal Suggestions</h3>
+        <div className="grid gap-3">
+          {nutritionPlan.meals.map((meal, i) => (
+            <div key={meal} className="rounded-2xl bg-gradient-to-br from-blue-50 to-teal-50 p-4 border border-blue-100 flex gap-3">
+              <div className="h-9 w-9 rounded-full bg-blue-600 text-white flex items-center justify-center font-black shrink-0">{i + 1}</div>
+              <p className="font-semibold text-slate-700">{meal}</p>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      <div className="grid md:grid-cols-2 gap-4">
+        <Card className="p-5">
+          <h3 className="text-xl font-black mb-2">Avoid Today</h3>
+          <p className="text-slate-600">{nutritionPlan.avoid}</p>
+        </Card>
+        <Card className="p-5">
+          <h3 className="text-xl font-black mb-2">Hydration Goal</h3>
+          <p className="text-slate-600">{nutritionPlan.hydration}</p>
+        </Card>
+      </div>
+    </motion.div>
+  );
 }
 
 function Coach({ messages, input, setInput, send }) {
