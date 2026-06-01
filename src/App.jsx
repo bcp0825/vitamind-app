@@ -105,7 +105,92 @@ function App() {
             Ask AI Coach
           </button>
         </div>
+<div
+  style={{
+    background: "white",
+    borderRadius: "20px",
+    padding: "25px",
+    marginBottom: "25px",
+    border: "1px solid #dbeafe"
+  }}
+>
+  <h2
+    style={{
+      fontSize: "28px",
+      color: "#2563eb",
+      marginBottom: "20px"
+    }}
+  >
+    Community Feed
+  </h2>
 
+  <textarea
+    placeholder="Share your wellness journey..."
+    style={{
+      width: "100%",
+      minHeight: "100px",
+      padding: "15px",
+      borderRadius: "12px",
+      border: "1px solid #cbd5e1",
+      marginBottom: "15px",
+      fontSize: "16px"
+    }}
+  />
+
+  <button
+    style={{
+      background: "#2563eb",
+      color: "white",
+      padding: "12px 18px",
+      border: "none",
+      borderRadius: "12px",
+      fontWeight: "bold",
+      cursor: "pointer"
+    }}
+  >
+    Create Post
+  </button>
+
+  <div
+    style={{
+      marginTop: "25px",
+      background: "#eff6ff",
+      padding: "20px",
+      borderRadius: "16px"
+    }}
+  >
+    <h3 style={{ marginBottom: "10px" }}>Maya</h3>
+
+    <p style={{ marginBottom: "15px" }}>
+      What helps your anxiety the most?
+    </p>
+
+    <button
+      style={{
+        background: "#dbeafe",
+        border: "none",
+        padding: "10px 14px",
+        borderRadius: "10px",
+        marginRight: "10px",
+        cursor: "pointer"
+      }}
+    >
+      👍 Like
+    </button>
+
+    <button
+      style={{
+        background: "#dbeafe",
+        border: "none",
+        padding: "10px 14px",
+        borderRadius: "10px",
+        cursor: "pointer"
+      }}
+    >
+      💬 Reply
+    </button>
+  </div>
+</div>
         {reply && (
           <div
             style={{
