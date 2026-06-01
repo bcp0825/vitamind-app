@@ -978,3 +978,4 @@ function Community({ posts, setPosts }) {
 }
 
 export default App;
+       
