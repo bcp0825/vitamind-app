@@ -1,4 +1,3 @@
-```jsx
 import React, { useState } from "react";
 
 function App() {
@@ -10,23 +9,23 @@ function App() {
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          message,
+          message: message,
           checkin: {
             anxiety: 5,
             stress: 5,
             depression: 5,
             motivation: 5,
             energy: 5,
-            sleep: 7,
-          },
-        }),
+            sleep: 7
+          }
+        })
       });
 
       const data = await response.json();
-      setReply(data.reply);
+      setReply(data.reply || "No reply received.");
     } catch (error) {
       setReply("AI connection failed.");
     }
