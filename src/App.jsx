@@ -30,12 +30,29 @@ function App() {
       setReply("AI connection failed.");
     }
   }
-return (
-  <div
-    style={{
-      padding: "40px",
-      fontFamily: "Arial",
-      minHeight: "100vh",
-      background: "linear-gradient(to bottom right, #dbeafe, white, #bfdbfe)"
-    }}
-  >
+
+  return (
+    <div style={{ padding: "40px", fontFamily: "Arial" }}>
+      <h1>Vitamind</h1>
+      <p>Mental and physical wellness connected.</p>
+
+      <input
+        value={message}
+        onChange={(e) => setMessage(e.target.value)}
+        placeholder="How are you feeling today?"
+        style={{ padding: "12px", width: "100%", marginBottom: "12px" }}
+      />
+
+      <button onClick={sendMessage}>Ask AI Coach</button>
+
+      {reply && (
+        <div style={{ marginTop: "20px" }}>
+          <strong>AI Coach:</strong>
+          <p>{reply}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default App;
