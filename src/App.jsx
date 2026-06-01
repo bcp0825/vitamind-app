@@ -1073,5 +1073,4 @@ function Community({ posts, setPosts }) {
 function Community({ posts, setPosts }) {
   // community code here
 }
-
 export default App;
