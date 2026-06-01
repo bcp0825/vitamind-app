@@ -30,17 +30,12 @@ function App() {
       setReply("AI connection failed.");
     }
   }
-
- return (
+return (
   <div
     style={{
       padding: "40px",
       fontFamily: "Arial",
       minHeight: "100vh",
-      background:
-        "linear-gradient(to bottom right, #dbeafe, white, #bfdbfe)"
+      background: "linear-gradient(to bottom right, #dbeafe, white, #bfdbfe)"
     }}
   >
-}
-
-export default App;
