@@ -4,6 +4,20 @@ function App() {
   const [message, setMessage] = useState("");
   const [reply, setReply] = useState("");
 
+  const [newPost, setNewPost] = useState("");
+  const [posts, setPosts] = useState([
+    {
+      name: "Maya",
+      text: "What helps your anxiety the most?",
+      likes: 2
+    },
+    {
+      name: "Jordan",
+      text: "Today I chose a 15-minute walk instead of skipping movement completely.",
+      likes: 4
+    }
+  ]);
+
   async function sendMessage() {
     try {
       const response = await fetch("/api/chat", {
@@ -29,6 +43,27 @@ function App() {
     } catch (error) {
       setReply("AI connection failed.");
     }
+  }
+
+  function addPost() {
+    if (!newPost.trim()) return;
+
+    setPosts([
+      {
+        name: "You",
+        text: newPost,
+        likes: 0
+      },
+      ...posts
+    ]);
+
+    setNewPost("");
+  }
+
+  function likePost(index) {
+    const updatedPosts = [...posts];
+    updatedPosts[index].likes = updatedPosts[index].likes + 1;
+    setPosts(updatedPosts);
   }
 
   return (
@@ -105,105 +140,101 @@ function App() {
             Ask AI Coach
           </button>
         </div>
-<div
-  style={{
-    background: "white",
-    borderRadius: "20px",
-    padding: "25px",
-    marginBottom: "25px",
-    border: "1px solid #dbeafe"
-  }}
->
-  <h2
-    style={{
-      fontSize: "28px",
-      color: "#2563eb",
-      marginBottom: "20px"
-    }}
-  >
-    Community Feed
-  </h2>
 
-  <textarea
-    placeholder="Share your wellness journey..."
-    style={{
-      width: "100%",
-      minHeight: "100px",
-      padding: "15px",
-      borderRadius: "12px",
-      border: "1px solid #cbd5e1",
-      marginBottom: "15px",
-      fontSize: "16px"
-    }}
-  />
-
-  <button
-    style={{
-      background: "#2563eb",
-      color: "white",
-      padding: "12px 18px",
-      border: "none",
-      borderRadius: "12px",
-      fontWeight: "bold",
-      cursor: "pointer"
-    }}
-  >
-    Create Post
-  </button>
-
-  <div
-    style={{
-      marginTop: "25px",
-      background: "#eff6ff",
-      padding: "20px",
-      borderRadius: "16px"
-    }}
-  >
-    <h3 style={{ marginBottom: "10px" }}>Maya</h3>
-
-    <p style={{ marginBottom: "15px" }}>
-      What helps your anxiety the most?
-    </p>
-
-    <button
-      style={{
-        background: "#dbeafe",
-        border: "none",
-        padding: "10px 14px",
-        borderRadius: "10px",
-        marginRight: "10px",
-        cursor: "pointer"
-      }}
-    >
-      👍 Like
-    </button>
-
-    <button
-      style={{
-        background: "#dbeafe",
-        border: "none",
-        padding: "10px 14px",
-        borderRadius: "10px",
-        cursor: "pointer"
-      }}
-    >
-      💬 Reply
-    </button>
-  </div>
-</div>
         {reply && (
           <div
             style={{
               background: "#eff6ff",
               border: "1px solid #bfdbfe",
               padding: "22px",
-              borderRadius: "18px"
+              borderRadius: "18px",
+              marginBottom: "25px"
             }}
           >
             <strong style={{ color: "#2563eb" }}>AI Coach:</strong>
             <p style={{ lineHeight: "1.6", marginTop: "10px" }}>{reply}</p>
           </div>
         )}
+
+        <div
+          style={{
+            background: "#f8fafc",
+            borderRadius: "20px",
+            padding: "25px",
+            border: "1px solid #dbeafe"
+          }}
+        >
+          <h2
+            style={{
+              fontSize: "28px",
+              color: "#2563eb",
+              marginBottom: "20px"
+            }}
+          >
+            Community Feed
+          </h2>
+
+          <textarea
+            value={newPost}
+            onChange={(e) => setNewPost(e.target.value)}
+            placeholder="Share your wellness journey..."
+            style={{
+              width: "100%",
+              minHeight: "100px",
+              padding: "15px",
+              borderRadius: "12px",
+              border: "1px solid #cbd5e1",
+              marginBottom: "15px",
+              fontSize: "16px"
+            }}
+          />
+
+          <button
+            onClick={addPost}
+            style={{
+              background: "#2563eb",
+              color: "white",
+              padding: "12px 18px",
+              border: "none",
+              borderRadius: "12px",
+              fontWeight: "bold",
+              cursor: "pointer",
+              marginBottom: "25px"
+            }}
+          >
+            Create Post
+          </button>
+
+          {posts.map((post, index) => (
+            <div
+              key={index}
+              style={{
+                background: "white",
+                padding: "20px",
+                borderRadius: "16px",
+                marginBottom: "15px",
+                border: "1px solid #dbeafe"
+              }}
+            >
+              <h3 style={{ marginBottom: "10px" }}>{post.name}</h3>
+
+              <p style={{ marginBottom: "15px" }}>{post.text}</p>
+
+              <button
+                onClick={() => likePost(index)}
+                style={{
+                  background: "#dbeafe",
+                  border: "none",
+                  padding: "10px 14px",
+                  borderRadius: "10px",
+                  cursor: "pointer"
+                }}
+              >
+                👍 Like ({post.likes})
+              </button>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
