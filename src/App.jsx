@@ -842,11 +842,66 @@ function Pricing({ subscribed, setSubscribed }) {
 function Community({ posts, setPosts }) {
   const [postText, setPostText] = useState("");
   const [topic, setTopic] = useState("Mental Health");
+  const [replyText, setReplyText] = useState({});
+  const [openReplies, setOpenReplies] = useState({});
 
   function addPost() {
     if (!postText.trim()) return;
-    setPosts((prev) => [{ name: "You", topic, text: postText.trim(), replies: 0, time: "Just now" }, ...prev]);
+
+    setPosts((prev) => [
+      {
+        name: "You",
+        topic,
+        text: postText.trim(),
+        replies: [],
+        likes: 0,
+        liked: false,
+        time: "Just now",
+      },
+      ...prev,
+    ]);
+
     setPostText("");
+  }
+
+  function toggleLike(index) {
+    setPosts((prev) =>
+      prev.map((post, i) =>
+        i === index
+          ? {
+              ...post,
+              liked: !post.liked,
+              likes: post.liked ? post.likes - 1 : post.likes + 1,
+            }
+          : post
+      )
+    );
+  }
+
+  function addReply(index) {
+    const text = replyText[index];
+    if (!text || !text.trim()) return;
+
+    setPosts((prev) =>
+      prev.map((post, i) =>
+        i === index
+          ? {
+              ...post,
+              replies: [
+                ...(Array.isArray(post.replies) ? post.replies : []),
+                {
+                  name: "You",
+                  text: text.trim(),
+                  time: "Just now",
+                },
+              ],
+            }
+          : post
+      )
+    );
+
+    setReplyText((prev) => ({ ...prev, [index]: "" }));
+    setOpenReplies((prev) => ({ ...prev, [index]: true }));
   }
 
   return (
@@ -891,41 +946,105 @@ function Community({ posts, setPosts }) {
                   placeholder="Share your wellness journey, ask a question, or encourage someone..."
                   className="w-full rounded-2xl bg-slate-100 px-5 py-4 outline-none focus:ring-2 focus:ring-blue-200"
                 />
+
                 <div className="flex flex-wrap items-center justify-between mt-4 gap-3">
-                  <select value={topic} onChange={(e) => setTopic(e.target.value)} className="rounded-xl border border-blue-100 px-3 py-2 text-sm outline-none">
+                  <select
+                    value={topic}
+                    onChange={(e) => setTopic(e.target.value)}
+                    className="rounded-xl border border-blue-100 px-3 py-2 text-sm outline-none"
+                  >
                     <option>Mental Health</option>
                     <option>Fitness</option>
                     <option>Nutrition</option>
                     <option>Wellness Wins</option>
                   </select>
+
                   <Button onClick={addPost}>Create Post</Button>
                 </div>
               </div>
             </div>
           </Card>
 
-          {posts.map((post, i) => (
-            <Card key={i} className="p-5 rounded-3xl">
-              <div className="flex justify-between gap-3 mb-2">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white font-black">
-                    {post.name[0]}
+          {posts.map((post, i) => {
+            const repliesArray = Array.isArray(post.replies) ? post.replies : [];
+            const likes = post.likes || 0;
+
+            return (
+              <Card key={i} className="p-5 rounded-3xl">
+                <div className="flex justify-between gap-3 mb-2">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white font-black">
+                      {post.name[0]}
+                    </div>
+                    <div>
+                      <p className="font-black">{post.name}</p>
+                      <p className="text-xs font-bold text-blue-600 uppercase">{post.topic}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-black">{post.name}</p>
-                    <p className="text-xs font-bold text-blue-600 uppercase">{post.topic}</p>
-                  </div>
+                  <p className="text-sm text-slate-500">{post.time}</p>
                 </div>
-                <p className="text-sm text-slate-500">{post.time}</p>
-              </div>
-              <p className="text-slate-700">{post.text}</p>
-              <div className="mt-5 flex items-center justify-between border-t border-slate-100 pt-4">
-                <button className="text-slate-600 hover:text-blue-600 font-semibold">👍 Encourage</button>
-                <button className="text-slate-600 hover:text-blue-600 font-semibold">💬 Reply ({post.replies})</button>
-                <button className="text-slate-600 hover:text-blue-600 font-semibold">↗ Share</button>
-              </div>
-            </Card>
-          ))}
+
+                <p className="text-slate-700">{post.text}</p>
+
+                <div className="mt-3 text-sm text-slate-500">
+                  {likes} encourages • {repliesArray.length} replies
+                </div>
+
+                <div className="mt-5 flex items-center justify-between border-t border-slate-100 pt-4">
+                  <button
+                    onClick={() => toggleLike(i)}
+                    className={`font-semibold ${post.liked ? "text-blue-600" : "text-slate-600 hover:text-blue-600"}`}
+                  >
+                    👍 {post.liked ? "Encouraged" : "Encourage"}
+                  </button>
+
+                  <button
+                    onClick={() =>
+                      setOpenReplies((prev) => ({
+                        ...prev,
+                        [i]: !prev[i],
+                      }))
+                    }
+                    className="text-slate-600 hover:text-blue-600 font-semibold"
+                  >
+                    💬 Reply
+                  </button>
+
+                  <button className="text-slate-600 hover:text-blue-600 font-semibold">
+                    ↗ Share
+                  </button>
+                </div>
+
+                {openReplies[i] && (
+                  <div className="mt-4 space-y-3">
+                    {repliesArray.map((reply, replyIndex) => (
+                      <div key={replyIndex} className="rounded-2xl bg-blue-50 p-3">
+                        <p className="font-bold text-sm">{reply.name}</p>
+                        <p className="text-slate-700 text-sm">{reply.text}</p>
+                        <p className="text-xs text-slate-400 mt-1">{reply.time}</p>
+                      </div>
+                    ))}
+
+                    <div className="flex gap-2">
+                      <input
+                        value={replyText[i] || ""}
+                        onChange={(e) =>
+                          setReplyText((prev) => ({
+                            ...prev,
+                            [i]: e.target.value,
+                          }))
+                        }
+                        placeholder="Write a supportive reply..."
+                        className="flex-1 rounded-2xl border border-blue-100 px-4 py-3 outline-none focus:ring-2 focus:ring-blue-200"
+                      />
+
+                      <Button onClick={() => addReply(i)}>Reply</Button>
+                    </div>
+                  </div>
+                )}
+              </Card>
+            );
+          })}
         </div>
 
         <div className="space-y-4 lg:col-span-1">
@@ -946,36 +1065,8 @@ function Community({ posts, setPosts }) {
               </div>
             </div>
           </Card>
-
-          <Card className="p-5">
-            <h3 className="font-black text-lg mb-3">Suggested Groups</h3>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-semibold">Mindful Weight Loss</p>
-                  <p className="text-xs text-slate-500">4.3k members</p>
-                </div>
-                <Button variant="secondary" className="py-2 px-3">
-                  Join
-                </Button>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-semibold">Anxiety Recovery</p>
-                  <p className="text-xs text-slate-500">2.1k members</p>
-                </div>
-                <Button variant="secondary" className="py-2 px-3">
-                  Join
-                </Button>
-              </div>
-            </div>
-          </Card>
         </div>
       </div>
     </motion.div>
   );
 }
-
-export default App;
-       
