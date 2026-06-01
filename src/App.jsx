@@ -1070,3 +1070,8 @@ function Community({ posts, setPosts }) {
     </motion.div>
   );
 }
+function Community({ posts, setPosts }) {
+  // community code here
+}
+
+export default App;
