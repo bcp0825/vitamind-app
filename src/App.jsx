@@ -32,7 +32,7 @@ function App() {
   }
 
   return (
-    <div style={{ padding: "40px", fontFamily: "Arial" }}>
+    <div style={{ padding: "40px", fontFamily: "Arial", backgroundColor: "#dbeafe", minHeight: "100vh" }}>
       <h1>Vitamind</h1>
       <p>Mental and physical wellness connected.</p>
 
