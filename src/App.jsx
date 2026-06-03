@@ -166,6 +166,10 @@ function App() {
   const [motivation, setMotivation] = useState(6);
   const [energy, setEnergy] = useState(6);
   const [sleep, setSleep] = useState(7);
+
+  // Set this to true only after you add real Stripe login/subscription verification.
+  // For now, false locks premium features and sends users to Stripe.
+  const HAS_ACCESS = false;
   const [subscribed, setSubscribed] = useState(false);
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState([
@@ -320,7 +324,7 @@ function App() {
 
           <main className="md:col-span-3">
             {screen === "website" && <Website setScreen={setScreen} />}
-            {screen === "home" && (
+            {screen === "home" && HAS_ACCESS && (
               <HomeScreen
                 depression={depression}
                 anxiety={anxiety}
@@ -332,7 +336,7 @@ function App() {
                 setScreen={setScreen}
               />
             )}
-            {screen === "checkin" && (
+            {screen === "checkin" && HAS_ACCESS && (
               <Checkin
                 depression={depression}
                 setDepression={setDepression}
@@ -349,8 +353,8 @@ function App() {
                 saveCheckin={saveCheckin}
               />
             )}
-            {screen === "progress" && <Progress history={history} />}
-            {screen === "fitness" && (
+            {screen === "progress" && HAS_ACCESS && <Progress history={history} />}
+            {screen === "fitness" && HAS_ACCESS && (
               <Fitness
                 plan={plan}
                 mode={mode}
@@ -362,7 +366,7 @@ function App() {
                 sleep={sleep}
               />
             )}
-            {screen === "nutrition" && (
+            {screen === "nutrition" && HAS_ACCESS && (
               <Nutrition
                 nutritionPlan={nutritionPlan}
                 depression={depression}
@@ -373,9 +377,33 @@ function App() {
                 sleep={sleep}
               />
             )}
-            {screen === "coach" && <Coach messages={messages} input={input} setInput={setInput} send={send} />}
-            {screen === "community" && <Community posts={posts} setPosts={setPosts} />}
+            {screen === "coach" && HAS_ACCESS && <Coach messages={messages} input={input} setInput={setInput} send={send} />}
+            {screen === "community" && HAS_ACCESS && <Community posts={posts} setPosts={setPosts} />}
             {screen === "pricing" && <Pricing subscribed={subscribed} setSubscribed={setSubscribed} />}
+
+            {!HAS_ACCESS &&
+              screen !== "website" &&
+              screen !== "pricing" && (
+                <Card className="p-10 text-center">
+                  <h2 className="text-4xl font-black mb-4 text-blue-700">
+                    Unlock Vitamind Premium
+                  </h2>
+
+                  <p className="text-slate-600 mb-8 text-lg">
+                    Subscribe to access AI coaching, wellness tracking, fitness plans,
+                    nutrition guidance, and community features.
+                  </p>
+
+                  <a
+                    href="https://buy.stripe.com/6oUfZ96bR60Vb1963h83C01"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-block rounded-2xl px-8 py-4 font-bold bg-blue-600 text-white hover:bg-blue-700 transition"
+                  >
+                    Start 7-Day Free Trial
+                  </a>
+                </Card>
+              )}
           </main>
         </div>
       </div>
