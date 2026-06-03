@@ -1,90 +1,27 @@
-import Stripe from "stripe";
-import { createClient } from "@supabase/supabase-js";
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-
-const supabase = createClient(
-  process.env.VITE_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
-
-export default async function handler(req, res) {
-  try {
-    const sig = req.headers["stripe-signature"];
-
-    const event = stripe.webhooks.constructEvent(
-      req.body,
-      sig,
-      process.env.STRIPE_WEBHOOK_SECRET
-    );
-
-    switch (event.type) {
-      case "checkout.session.completed": {
-        const session = event.data.object;
-
-        const userId = session.client_reference_id;
-
-        if (userId) {
-          await supabase
-            .from("profiles")
-            .upsert({
-              id: userId,
-              email: session.customer_details?.email,
-              subscription_status: "active",
-            });
-        }
-
-        break;
-      }
-
-      case "customer.subscription.updated": {
-        const subscription = event.data.object;
-
-        const userId =
-          subscription.metadata?.user_id;
-
-        if (userId) {
-          await supabase
-            .from("profiles")
-            .update({
-              subscription_status:
-                subscription.status === "active"
-                  ? "active"
-                  : "inactive",
-            })
-            .eq("id", userId);
-        }
-
-        break;
-      }
-
-      case "customer.subscription.deleted": {
-        const subscription = event.data.object;
-
-        const userId =
-          subscription.metadata?.user_id;
-
-        if (userId) {
-          await supabase
-            .from("profiles")
-            .update({
-              subscription_status: "inactive",
-            })
-            .eq("id", userId);
-        }
-
-        break;
-      }
-    }
-
-    return res.status(200).json({
-      received: true,
-    });
-  } catch (err) {
-    console.error(err);
-
-    return res.status(400).json({
-      error: err.message,
-    });
+{
+  "name": "vitamind",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.4",
+    "stripe": "^18.4.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "framer-motion": "^11.0.0",
+    "lucide-react": "^0.446.0",
+    "openai": "^4.104.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.1",
+    "vite": "^5.4.8",
+    "tailwindcss": "3.4.17",
+    "postcss": "8.4.49",
+    "autoprefixer": "10.4.20"
   }
 }
