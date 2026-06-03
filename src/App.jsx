@@ -357,7 +357,18 @@ function App() {
           setAuthMessage("");
           const { data } = await supabase.auth.getSession();
           await loadProfile(data.session);
-          setScreen("home");
+
+          const { data: profileData } = await supabase
+            .from("profiles")
+            .select("subscription_status")
+            .eq("id", data.session?.user?.id)
+            .single();
+
+          if (profileData?.subscription_status === "active") {
+            setScreen("home");
+          } else {
+            setScreen("pricing");
+          }
         }
       }
     } catch (error) {
@@ -600,6 +611,7 @@ function App() {
                 handleAuth={handleAuth}
                 handleLogout={handleLogout}
                 subscriptionStatus={subscriptionStatus}
+                startCheckout={startCheckout}
               />
             )}
             {screen === "home" && HAS_ACCESS && (
@@ -723,6 +735,7 @@ function AuthScreen({
   handleAuth,
   handleLogout,
   subscriptionStatus,
+  startCheckout,
 }) {
   if (session) {
     return (
@@ -737,7 +750,15 @@ function AuthScreen({
             Subscription status: <strong>{subscriptionStatus}</strong>
           </p>
 
-          <Button onClick={handleLogout}>Logout</Button>
+          <div className="flex flex-wrap gap-3 justify-center">
+            {subscriptionStatus !== "active" && (
+              <Button onClick={startCheckout}>
+                Subscribe Now
+              </Button>
+            )}
+
+            <Button onClick={handleLogout}>Logout</Button>
+          </div>
         </Card>
       </motion.div>
     );
