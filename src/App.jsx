@@ -177,7 +177,7 @@ function App() {
 
   // Set this to true only after you add real Stripe login/subscription verification.
   // For now, false locks premium features and sends users to Stripe.
-  const HAS_ACCESS = true;
+  const HAS_ACCESS = false;
   const [subscribed, setSubscribed] = useState(false);
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState([
