@@ -350,7 +350,7 @@ function App() {
 
   // For now, false locks premium features and sends users to Stripe.
 
-  const HAS_ACCESS = false;
+  const HAS_ACCESS = true;
 
   const [subscribed, setSubscribed] = useState(false);
 
