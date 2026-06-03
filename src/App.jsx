@@ -1,4 +1,5 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { supabase } from "./supabaseClient";
 import { motion } from "framer-motion";
 import {
   Activity,
@@ -162,6 +163,12 @@ function buildNutritionPlan({ depression, anxiety, stress, motivation, energy, s
 
 function App() {
   const [screen, setScreen] = useState("website");
+  const [session, setSession] = useState(null);
+  const [authMode, setAuthMode] = useState("login");
+  const [authEmail, setAuthEmail] = useState("");
+  const [authPassword, setAuthPassword] = useState("");
+  const [authMessage, setAuthMessage] = useState("");
+  const [authLoading, setAuthLoading] = useState(false);
   const [depression, setDepression] = useState(4);
   const [anxiety, setAnxiety] = useState(5);
   const [stress, setStress] = useState(5);
@@ -177,7 +184,7 @@ function App() {
 
   // Set this to true only after you add real Stripe login/subscription verification.
   // For now, false locks premium features and sends users to Stripe.
-  const HAS_ACCESS = false;
+  const HAS_ACCESS = Boolean(session);
   const [subscribed, setSubscribed] = useState(false);
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState([
@@ -273,6 +280,73 @@ function App() {
     () => buildNutritionPlan({ depression, anxiety, stress, motivation, energy, sleep }),
     [depression, anxiety, stress, motivation, energy, sleep]
   );
+
+
+  useEffect(() => {
+    async function loadSession() {
+      const { data } = await supabase.auth.getSession();
+      setSession(data.session);
+    }
+
+    loadSession();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, currentSession) => {
+      setSession(currentSession);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  async function handleAuth() {
+    setAuthMessage("");
+    setAuthLoading(true);
+
+    try {
+      if (!authEmail || !authPassword) {
+        setAuthMessage("Please enter your email and password.");
+        setAuthLoading(false);
+        return;
+      }
+
+      if (authMode === "signup") {
+        const { error } = await supabase.auth.signUp({
+          email: authEmail,
+          password: authPassword,
+        });
+
+        if (error) {
+          setAuthMessage(error.message);
+        } else {
+          setAuthMessage("Account created. Check your email if confirmation is required, then log in.");
+          setAuthMode("login");
+        }
+      } else {
+        const { error } = await supabase.auth.signInWithPassword({
+          email: authEmail,
+          password: authPassword,
+        });
+
+        if (error) {
+          setAuthMessage(error.message);
+        } else {
+          setAuthMessage("");
+          setScreen("home");
+        }
+      }
+    } catch (error) {
+      setAuthMessage("Login connection failed.");
+    }
+
+    setAuthLoading(false);
+  }
+
+  async function handleLogout() {
+    await supabase.auth.signOut();
+    setSession(null);
+    setScreen("website");
+  }
 
   function saveCheckin() {
     const today = new Date().toLocaleDateString("en-US", {
@@ -401,8 +475,26 @@ function App() {
       <div className="mx-auto max-w-6xl p-4 md:p-8">
         <header className="flex items-center justify-between mb-6">
           <Logo />
-          <div className="hidden md:flex items-center gap-2 rounded-full bg-white border border-blue-100 px-4 py-2 shadow-sm text-sm text-slate-600">
-            <Sparkles size={16} className="text-blue-600" /> AI wellness platform
+          <div className="hidden md:flex items-center gap-3">
+            <div className="flex items-center gap-2 rounded-full bg-white border border-blue-100 px-4 py-2 shadow-sm text-sm text-slate-600">
+              <Sparkles size={16} className="text-blue-600" /> AI wellness platform
+            </div>
+
+            {session ? (
+              <button
+                onClick={handleLogout}
+                className="rounded-full bg-blue-600 text-white px-4 py-2 font-semibold hover:bg-blue-700 transition text-sm"
+              >
+                Logout
+              </button>
+            ) : (
+              <button
+                onClick={() => setScreen("auth")}
+                className="rounded-full bg-blue-600 text-white px-4 py-2 font-semibold hover:bg-blue-700 transition text-sm"
+              >
+                Login
+              </button>
+            )}
           </div>
         </header>
 
@@ -410,6 +502,7 @@ function App() {
           <nav className="bg-white rounded-3xl border border-blue-100 p-3 shadow-sm h-fit md:col-span-1">
             {[
               ["website", Sparkles, "Website"],
+              ["auth", Users, session ? "Account" : "Login"],
               ["home", Home, "Dashboard"],
               ["checkin", Smile, "Check-In"],
               ["progress", BarChart3, "Progress"],
@@ -437,6 +530,21 @@ function App() {
 
           <main className="md:col-span-3">
             {screen === "website" && <Website setScreen={setScreen} />}
+            {screen === "auth" && (
+              <AuthScreen
+                session={session}
+                authMode={authMode}
+                setAuthMode={setAuthMode}
+                authEmail={authEmail}
+                setAuthEmail={setAuthEmail}
+                authPassword={authPassword}
+                setAuthPassword={setAuthPassword}
+                authMessage={authMessage}
+                authLoading={authLoading}
+                handleAuth={handleAuth}
+                handleLogout={handleLogout}
+              />
+            )}
             {screen === "home" && HAS_ACCESS && (
               <HomeScreen
                 depression={depression}
@@ -517,7 +625,8 @@ function App() {
 
             {!HAS_ACCESS &&
               screen !== "website" &&
-              screen !== "pricing" && (
+              screen !== "pricing" &&
+              screen !== "auth" && (
                 <Card className="p-10 text-center">
                   <h2 className="text-4xl font-black mb-4 text-blue-700">
                     Unlock Vitamind Premium
@@ -544,6 +653,105 @@ function App() {
     </div>
   );
 }
+
+
+function AuthScreen({
+  session,
+  authMode,
+  setAuthMode,
+  authEmail,
+  setAuthEmail,
+  authPassword,
+  setAuthPassword,
+  authMessage,
+  authLoading,
+  handleAuth,
+  handleLogout,
+}) {
+  if (session) {
+    return (
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+        <Card className="p-8 text-center">
+          <h2 className="text-4xl font-black mb-3 text-blue-700">Account Active</h2>
+          <p className="text-slate-600 mb-6">
+            You are logged in as <strong>{session.user.email}</strong>.
+          </p>
+
+          <Button onClick={handleLogout}>Logout</Button>
+        </Card>
+      </motion.div>
+    );
+  }
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
+      <Card className="p-8 bg-gradient-to-r from-blue-700 via-sky-500 to-teal-400 text-white border-none shadow-xl shadow-blue-100">
+        <p className="text-blue-100 font-semibold mb-2">Vitamind Account</p>
+        <h2 className="text-5xl font-black mb-4">
+          {authMode === "signup" ? "Create your account" : "Welcome back"}
+        </h2>
+        <p className="text-blue-50 text-lg max-w-3xl">
+          Log in to access Vitamind Premium features, save your wellness history, food logs, and AI coaching experience.
+        </p>
+      </Card>
+
+      <Card className="p-6 max-w-xl mx-auto">
+        <div className="flex gap-2 mb-6 rounded-2xl bg-blue-50 p-2">
+          <button
+            onClick={() => setAuthMode("login")}
+            className={`flex-1 rounded-xl px-4 py-3 font-bold transition ${
+              authMode === "login" ? "bg-blue-600 text-white" : "text-blue-700"
+            }`}
+          >
+            Login
+          </button>
+
+          <button
+            onClick={() => setAuthMode("signup")}
+            className={`flex-1 rounded-xl px-4 py-3 font-bold transition ${
+              authMode === "signup" ? "bg-blue-600 text-white" : "text-blue-700"
+            }`}
+          >
+            Sign Up
+          </button>
+        </div>
+
+        <label className="block font-bold mb-2">Email</label>
+        <input
+          value={authEmail}
+          onChange={(e) => setAuthEmail(e.target.value)}
+          type="email"
+          placeholder="you@example.com"
+          className="w-full rounded-2xl border border-blue-100 px-4 py-3 outline-none focus:ring-2 focus:ring-blue-200 mb-4"
+        />
+
+        <label className="block font-bold mb-2">Password</label>
+        <input
+          value={authPassword}
+          onChange={(e) => setAuthPassword(e.target.value)}
+          type="password"
+          placeholder="Enter password"
+          className="w-full rounded-2xl border border-blue-100 px-4 py-3 outline-none focus:ring-2 focus:ring-blue-200 mb-5"
+        />
+
+        <Button onClick={handleAuth} className="w-full">
+          {authLoading ? "Please wait..." : authMode === "signup" ? "Create Account" : "Login"}
+        </Button>
+
+        {authMessage && (
+          <p className="mt-4 text-center text-sm font-semibold text-blue-700">
+            {authMessage}
+          </p>
+        )}
+
+        <p className="text-xs text-slate-500 mt-5 text-center">
+          Next step: connect this account to saved check-ins, food logs, and Stripe subscription status.
+        </p>
+      </Card>
+    </motion.div>
+  );
+}
+
 
 function Website({ setScreen }) {
   return (
