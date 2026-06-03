@@ -1,4 +1,3 @@
-```js
 import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
@@ -21,11 +20,8 @@ export default async function handler(req, res) {
 
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
-
       payment_method_types: ["card"],
-
       customer_email: email,
-
       client_reference_id: userId,
 
       line_items: [
@@ -35,11 +31,8 @@ export default async function handler(req, res) {
         },
       ],
 
-      success_url:
-        "https://www.the-vitamind.com/?subscription=success",
-
-      cancel_url:
-        "https://www.the-vitamind.com/?subscription=cancelled",
+      success_url: "https://www.the-vitamind.com/?subscription=success",
+      cancel_url: "https://www.the-vitamind.com/?subscription=cancelled",
 
       subscription_data: {
         metadata: {
@@ -63,4 +56,3 @@ export default async function handler(req, res) {
     });
   }
 }
-```
