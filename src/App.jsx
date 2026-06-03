@@ -415,18 +415,28 @@ function Website({ setScreen }) {
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
       <Card className="p-8 md:p-12 bg-gradient-to-r from-blue-700 via-sky-500 to-teal-400 text-white border-none shadow-xl shadow-blue-100 overflow-hidden relative">
-        <div className="max-w-2xl relative z-10">
+        <div className="max-w-3xl relative z-10">
           <p className="font-bold text-blue-100 mb-3">Vitamind Wellness Platform</p>
-          <h2 className="text-4xl md:text-6xl font-black mb-5 leading-tight">Mental and physical wellness connected.</h2>
-          <p className="text-lg text-blue-50 mb-8">
-            Start with a mental health check-in, get a personalized workout and nutrition plan, then talk with your AI wellness coach.
+
+          <h2 className="text-4xl md:text-6xl font-black mb-5 leading-tight">
+            Your mind and body work together. Your wellness app should too.
+          </h2>
+
+          <p className="text-lg md:text-xl text-blue-50 mb-5 leading-relaxed">
+            Vitamind connects mental health, fitness, nutrition, AI coaching, and community support into one daily wellness experience.
           </p>
+
+          <p className="text-blue-50 mb-8 leading-relaxed">
+            Start with a quick mental health check-in. Vitamind uses your anxiety, stress, depression, energy, motivation, sleep, ADHD, and trauma-stress ratings to guide your day with a personalized workout, food suggestions, progress tracking, and AI wellness support.
+          </p>
+
           <div className="flex flex-wrap gap-3">
-            <Button onClick={() => setScreen("checkin")} variant="secondary" className="bg-white text-blue-700 hover:bg-blue-50">
-              Start Check-In
+            <Button onClick={() => setScreen("pricing")} variant="secondary" className="bg-white text-blue-700 hover:bg-blue-50">
+              Start 7-Day Free Trial
             </Button>
-            <Button onClick={() => setScreen("pricing")} variant="secondary" className="bg-blue-900/30 text-white hover:bg-blue-900/40">
-              View Subscription
+
+            <Button onClick={() => setScreen("checkin")} variant="secondary" className="bg-blue-900/30 text-white hover:bg-blue-900/40">
+              Preview Check-In
             </Button>
           </div>
         </div>
@@ -434,41 +444,122 @@ function Website({ setScreen }) {
 
       <div className="grid md:grid-cols-3 gap-4">
         <FeatureCard icon={Brain} color="text-blue-600" bg="bg-blue-50" title="Mental Health Check-In">
-          Track anxiety, depression, ADHD symptoms, trauma stress, sleep, and motivation.
+          Rate anxiety, depression, stress, ADHD symptoms, trauma stress, motivation, energy, and sleep so your plan matches how you actually feel.
         </FeatureCard>
-        <FeatureCard icon={Dumbbell} color="text-sky-600" bg="bg-sky-50" title="Workout + Meal Plan">
-          Receive movement and food suggestions based on how you feel that day.
+
+        <FeatureCard icon={Dumbbell} color="text-sky-600" bg="bg-sky-50" title="Adaptive Fitness">
+          Vitamind adjusts workouts based on your ratings. High stress or low sleep creates a recovery plan. High energy creates a stronger training day.
         </FeatureCard>
-        <FeatureCard icon={MessageCircle} color="text-teal-600" bg="bg-teal-50" title="AI Coach + Community">
-          Ask for support and connect with others around mental health, fitness, and wellness.
+
+        <FeatureCard icon={Apple} color="text-teal-600" bg="bg-teal-50" title="Mood-Based Nutrition">
+          Get food suggestions that support calm, focus, energy, recovery, and consistency based on your daily check-in.
         </FeatureCard>
       </div>
 
       <Card className="p-6 md:p-8">
         <div className="grid md:grid-cols-2 gap-6 items-center">
           <div>
-            <h3 className="text-3xl font-black mb-3">Built for daily wellness support</h3>
-            <p className="text-slate-600 mb-5">
-              Vitamind helps users connect their emotional state to real-world action: movement, food, coaching, and community encouragement.
-            </p>
-            <Button onClick={() => setScreen("community")}>Explore Community</Button>
+            <p className="text-blue-600 font-black uppercase text-sm mb-2">How Vitamind Works</p>
+            <h3 className="text-3xl font-black mb-4">A simple daily flow for better wellness</h3>
+
+            <div className="space-y-4">
+              <div className="flex gap-3">
+                <div className="h-9 w-9 rounded-full bg-blue-600 text-white flex items-center justify-center font-black shrink-0">1</div>
+                <div>
+                  <h4 className="font-black">Complete your check-in</h4>
+                  <p className="text-slate-600">Track mental and physical wellness ratings in under a minute.</p>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <div className="h-9 w-9 rounded-full bg-blue-600 text-white flex items-center justify-center font-black shrink-0">2</div>
+                <div>
+                  <h4 className="font-black">Get a personalized plan</h4>
+                  <p className="text-slate-600">Receive movement, nutrition, and recovery recommendations based on your scores.</p>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <div className="h-9 w-9 rounded-full bg-blue-600 text-white flex items-center justify-center font-black shrink-0">3</div>
+                <div>
+                  <h4 className="font-black">Talk with the AI Coach</h4>
+                  <p className="text-slate-600">Ask for motivation, stress support, fitness ideas, nutrition help, or a simple next step.</p>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <div className="h-9 w-9 rounded-full bg-blue-600 text-white flex items-center justify-center font-black shrink-0">4</div>
+                <div>
+                  <h4 className="font-black">Track your progress weekly</h4>
+                  <p className="text-slate-600">Review your ratings over time and notice patterns in mood, stress, energy, and sleep.</p>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div className="rounded-3xl bg-gradient-to-br from-blue-50 to-sky-100 p-5 border border-blue-100">
             <div className="rounded-2xl bg-white p-4 shadow-sm mb-3">
               <p className="font-black">Today’s Check-In</p>
-              <p className="text-sm text-slate-500">Anxiety 7/10 • Sleep 5 hrs</p>
+              <p className="text-sm text-slate-500">Anxiety 7/10 • Stress 8/10 • Sleep 5 hrs</p>
             </div>
+
             <div className="rounded-2xl bg-white p-4 shadow-sm mb-3">
-              <p className="font-black text-blue-700">Suggested Plan</p>
-              <p className="text-sm text-slate-500">10-minute walk + stress-support meal</p>
+              <p className="font-black text-blue-700">Suggested Fitness Plan</p>
+              <p className="text-sm text-slate-500">Recovery Reset: 10-minute walk, stretch, and breathing.</p>
             </div>
+
+            <div className="rounded-2xl bg-white p-4 shadow-sm mb-3">
+              <p className="font-black text-teal-700">Suggested Nutrition Plan</p>
+              <p className="text-sm text-slate-500">Calm-support meal with protein, complex carbs, hydration, and magnesium-rich snacks.</p>
+            </div>
+
             <div className="rounded-2xl bg-blue-600 text-white p-4 shadow-sm">
               <p className="font-black">AI Coach</p>
-              <p className="text-sm text-blue-50">Let’s focus on one small win today.</p>
+              <p className="text-sm text-blue-50">“Today is a recovery day, not a failure day. Let’s focus on one small win.”</p>
             </div>
           </div>
         </div>
+      </Card>
+
+      <Card className="p-6 md:p-8 bg-gradient-to-br from-white to-blue-50">
+        <div className="grid md:grid-cols-3 gap-5">
+          <div>
+            <h3 className="text-2xl font-black mb-2">Built for real life</h3>
+            <p className="text-slate-600">
+              Vitamind is designed for busy people who need simple, practical support without feeling overwhelmed.
+            </p>
+          </div>
+
+          <div>
+            <h3 className="text-2xl font-black mb-2">Supportive community</h3>
+            <p className="text-slate-600">
+              Share wellness wins, ask questions, encourage others, and connect around mental health, fitness, and nutrition.
+            </p>
+          </div>
+
+          <div>
+            <h3 className="text-2xl font-black mb-2">Premium access</h3>
+            <p className="text-slate-600">
+              Unlock AI coaching, check-ins, adaptive plans, progress tracking, and community tools with Vitamind Premium.
+            </p>
+          </div>
+        </div>
+      </Card>
+
+      <Card className="p-6 md:p-8 text-center border-2 border-blue-200">
+        <h3 className="text-3xl font-black mb-3">Start your connected wellness journey</h3>
+        <p className="text-slate-600 mb-6 max-w-2xl mx-auto">
+          Try Vitamind Premium free for 7 days and begin connecting your mental health, movement, nutrition, and daily support in one place.
+        </p>
+
+        <a
+          href="https://buy.stripe.com/6oUfZ96bR60Vb1963h83C01"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-block rounded-2xl px-8 py-4 font-bold bg-blue-600 text-white hover:bg-blue-700 transition"
+        >
+          Start 7-Day Free Trial
+        </a>
       </Card>
     </motion.div>
   );
