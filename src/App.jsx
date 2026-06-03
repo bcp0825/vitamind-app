@@ -164,6 +164,7 @@ function buildNutritionPlan({ depression, anxiety, stress, motivation, energy, s
 function App() {
   const [screen, setScreen] = useState("website");
   const [session, setSession] = useState(null);
+  const [subscriptionStatus, setSubscriptionStatus] = useState("inactive");
   const [authMode, setAuthMode] = useState("login");
   const [authEmail, setAuthEmail] = useState("");
   const [authPassword, setAuthPassword] = useState("");
@@ -184,7 +185,7 @@ function App() {
 
   // Set this to true only after you add real Stripe login/subscription verification.
   // For now, false locks premium features and sends users to Stripe.
-  const HAS_ACCESS = Boolean(session);
+  const HAS_ACCESS = subscriptionStatus === "active";
   const [subscribed, setSubscribed] = useState(false);
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState([
@@ -282,18 +283,40 @@ function App() {
   );
 
 
+  async function loadProfile(currentSession) {
+    if (!currentSession?.user?.id) {
+      setSubscriptionStatus("inactive");
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("subscription_status")
+      .eq("id", currentSession.user.id)
+      .single();
+
+    if (error || !data) {
+      setSubscriptionStatus("inactive");
+      return;
+    }
+
+    setSubscriptionStatus(data.subscription_status || "inactive");
+  }
+
   useEffect(() => {
     async function loadSession() {
       const { data } = await supabase.auth.getSession();
       setSession(data.session);
+      await loadProfile(data.session);
     }
 
     loadSession();
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, currentSession) => {
+    } = supabase.auth.onAuthStateChange(async (_event, currentSession) => {
       setSession(currentSession);
+      await loadProfile(currentSession);
     });
 
     return () => subscription.unsubscribe();
@@ -332,6 +355,8 @@ function App() {
           setAuthMessage(error.message);
         } else {
           setAuthMessage("");
+          const { data } = await supabase.auth.getSession();
+          await loadProfile(data.session);
           setScreen("home");
         }
       }
@@ -345,6 +370,7 @@ function App() {
   async function handleLogout() {
     await supabase.auth.signOut();
     setSession(null);
+    setSubscriptionStatus("inactive");
     setScreen("website");
   }
 
@@ -573,6 +599,7 @@ function App() {
                 authLoading={authLoading}
                 handleAuth={handleAuth}
                 handleLogout={handleLogout}
+                subscriptionStatus={subscriptionStatus}
               />
             )}
             {screen === "home" && HAS_ACCESS && (
@@ -663,8 +690,8 @@ function App() {
                   </h2>
 
                   <p className="text-slate-600 mb-8 text-lg">
-                    Subscribe to access AI coaching, wellness tracking, fitness plans,
-                    nutrition guidance, and community features.
+                    Log in and subscribe to access AI coaching, wellness tracking, fitness plans,
+                    nutrition guidance, food logs, and community features.
                   </p>
 
                   <button
@@ -695,14 +722,19 @@ function AuthScreen({
   authLoading,
   handleAuth,
   handleLogout,
+  subscriptionStatus,
 }) {
   if (session) {
     return (
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
         <Card className="p-8 text-center">
           <h2 className="text-4xl font-black mb-3 text-blue-700">Account Active</h2>
-          <p className="text-slate-600 mb-6">
+          <p className="text-slate-600 mb-3">
             You are logged in as <strong>{session.user.email}</strong>.
+          </p>
+
+          <p className="text-slate-600 mb-6">
+            Subscription status: <strong>{subscriptionStatus}</strong>
           </p>
 
           <Button onClick={handleLogout}>Logout</Button>
