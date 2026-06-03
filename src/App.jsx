@@ -3,7 +3,6 @@ import { motion } from "framer-motion";
 import {
   Activity,
   Apple,
-  Utensils,
   BarChart3,
   Brain,
   CalendarDays,
@@ -14,7 +13,6 @@ import {
   Moon,
   Send,
   ShieldCheck,
-  Mail,
   Smile,
   Sparkles,
   TrendingUp,
@@ -173,7 +171,6 @@ function App() {
   const [hyperactivity, setHyperactivity] = useState(5);
   const [energy, setEnergy] = useState(6);
   const [sleep, setSleep] = useState(7);
-  const [exercise, setExercise] = useState(5);
 
   // Set this to true only after you add real Stripe login/subscription verification.
   // For now, false locks premium features and sends users to Stripe.
@@ -185,33 +182,6 @@ function App() {
       role: "coach",
       text: "Welcome to Vitamind. Complete your check-in, then I’ll help guide your mind-body plan.",
     },
-  ]);
-
-  const [foodEntry, setFoodEntry] = useState({
-    meal: "Breakfast",
-    food: "",
-    mood: "Neutral",
-    energyAfter: 5,
-    notes: ""
-  });
-
-  const [foodLog, setFoodLog] = useState([
-    {
-      date: "Today",
-      meal: "Breakfast",
-      food: "Greek yogurt, berries, oats, water",
-      mood: "Focused",
-      energyAfter: 7,
-      notes: "Felt steady and less hungry later."
-    },
-    {
-      date: "Yesterday",
-      meal: "Dinner",
-      food: "Chicken, rice, vegetables",
-      mood: "Calm",
-      energyAfter: 6,
-      notes: "Good balanced meal."
-    }
   ]);
 
   const [posts, setPosts] = useState([
@@ -261,41 +231,10 @@ function App() {
       hyperactivity,
       energy,
       sleep,
-      exercise,
     };
 
     setHistory((prev) => [entry, ...prev.filter((item) => item.date !== today)]);
     setScreen("home");
-  }
-
-  function addFoodEntry() {
-    if (!foodEntry.food.trim()) return;
-
-    const today = new Date().toLocaleDateString("en-US", {
-      weekday: "short",
-      month: "short",
-      day: "numeric",
-    });
-
-    setFoodLog((prev) => [
-      {
-        date: today,
-        meal: foodEntry.meal,
-        food: foodEntry.food.trim(),
-        mood: foodEntry.mood,
-        energyAfter: foodEntry.energyAfter,
-        notes: foodEntry.notes.trim()
-      },
-      ...prev
-    ]);
-
-    setFoodEntry({
-      meal: "Breakfast",
-      food: "",
-      mood: "Neutral",
-      energyAfter: 5,
-      notes: ""
-    });
   }
 
   async function send() {
@@ -334,10 +273,8 @@ function App() {
             hyperactivity,
             energy,
             sleep,
-            exercise,
           },
           history,
-          foodLog,
         }),
       });
 
@@ -382,7 +319,6 @@ function App() {
               ["progress", BarChart3, "Progress"],
               ["fitness", Dumbbell, "Fitness"],
               ["nutrition", Apple, "Nutrition"],
-              ["foodlog", Utensils, "Food Log"],
               ["coach", MessageCircle, "AI Coach"],
               ["community", Users, "Community"],
               ["pricing", CreditCard, "Subscription"],
@@ -439,8 +375,6 @@ function App() {
                 setEnergy={setEnergy}
                 sleep={sleep}
                 setSleep={setSleep}
-                exercise={exercise}
-                setExercise={setExercise}
                 saveCheckin={saveCheckin}
               />
             )}
@@ -468,18 +402,9 @@ function App() {
                 sleep={sleep}
               />
             )}
-            {screen === "foodlog" && HAS_ACCESS && (
-              <FoodLog
-                foodEntry={foodEntry}
-                setFoodEntry={setFoodEntry}
-                foodLog={foodLog}
-                addFoodEntry={addFoodEntry}
-              />
-            )}
             {screen === "coach" && HAS_ACCESS && <Coach messages={messages} input={input} setInput={setInput} send={send} />}
             {screen === "community" && HAS_ACCESS && <Community posts={posts} setPosts={setPosts} />}
             {screen === "pricing" && <Pricing subscribed={subscribed} setSubscribed={setSubscribed} />}
-            {screen === "support" && <Support />}
 
             {!HAS_ACCESS &&
               screen !== "website" &&
@@ -554,70 +479,7 @@ function Website({ setScreen }) {
         <FeatureCard icon={Apple} color="text-teal-600" bg="bg-teal-50" title="Mood-Based Nutrition">
           Get food suggestions that support calm, focus, energy, recovery, and consistency based on your daily check-in.
         </FeatureCard>
-      
-      <Card className="p-6 md:p-8 bg-gradient-to-br from-blue-50 to-white border border-blue-100">
-        <div className="grid md:grid-cols-2 gap-6 items-center">
-          <div>
-            <p className="text-blue-600 font-black uppercase text-sm mb-2">
-              Smart Food Tracking
-            </p>
-
-            <h3 className="text-3xl font-black mb-4">
-              Understand how food affects your mood, energy, and mental health
-            </h3>
-
-            <p className="text-slate-600 mb-4 leading-relaxed">
-              Vitamind now includes a personalized food tracking system designed to
-              connect your nutrition with your emotional and physical wellness.
-            </p>
-
-            <p className="text-slate-600 mb-4 leading-relaxed">
-              Users can log meals, snacks, drinks, mood after eating, energy levels,
-              cravings, and food notes. Over time, Vitamind identifies patterns
-              between nutrition, anxiety, depression, motivation, focus, sleep,
-              exercise, PTSD symptoms, trauma stress, and overall wellness.
-            </p>
-
-            <p className="text-slate-600 leading-relaxed">
-              The AI Coach can use this information to create more personalized meal
-              recommendations, identify foods that improve energy or worsen symptoms,
-              and help users build healthier long-term habits.
-            </p>
-          </div>
-
-          <div className="space-y-4">
-            <div className="rounded-2xl bg-white border border-blue-100 p-4 shadow-sm">
-              <p className="font-black text-blue-700 mb-1">Breakfast Log</p>
-              <p className="text-slate-700">
-                Eggs, oatmeal, berries, coffee, water
-              </p>
-              <p className="text-sm text-slate-500 mt-2">
-                Mood: Focused • Energy: 8/10
-              </p>
-            </div>
-
-            <div className="rounded-2xl bg-white border border-blue-100 p-4 shadow-sm">
-              <p className="font-black text-teal-700 mb-1">
-                AI Nutrition Insight
-              </p>
-
-              <p className="text-slate-700 text-sm">
-                Higher-protein breakfasts appear to improve your energy and focus
-                while lowering afternoon cravings.
-              </p>
-            </div>
-
-            <div className="rounded-2xl bg-blue-600 text-white p-4 shadow-sm">
-              <p className="font-black mb-1">Vitamind Goal</p>
-
-              <p className="text-sm text-blue-50">
-                Build healthier nutrition habits that support mental clarity,
-                emotional regulation, recovery, and long-term wellness.
-              </p>
-            </div>
-          </div>
-        </div>
-      </Card>
+      </div>
 
       <Card className="p-6 md:p-8">
         <div className="grid md:grid-cols-2 gap-6 items-center">
@@ -816,8 +678,6 @@ function Checkin({
   setEnergy,
   sleep,
   setSleep,
-  exercise,
-  setExercise,
   saveCheckin,
 }) {
   return (
@@ -851,10 +711,6 @@ function Checkin({
 
         <CheckCard title="Sleep & Recovery" text="Sleep quality strongly affects mood, anxiety, energy, and emotional resilience.">
           <Slider label="Sleep hours" value={sleep} setValue={setSleep} min={3} max={10} suffix=" hrs" />
-        </CheckCard>
-
-        <CheckCard title="Exercise & Physical Activity" text="Track how active you have been recently including workouts, walking, stretching, movement, and physical activity consistency.">
-          <Slider label="Exercise Consistency" value={exercise} setValue={setExercise} />
         </CheckCard>
 
         <Button onClick={saveCheckin} className="w-full mt-2">
@@ -970,7 +826,6 @@ function Progress({ history }) {
                 <th className="py-3 pr-4">Hyperactivity</th>
                 <th className="py-3 pr-4">Energy</th>
                 <th className="py-3 pr-4">Sleep</th>
-                <th className="py-3 pr-4">Exercise</th>
               </tr>
             </thead>
             <tbody>
@@ -986,7 +841,6 @@ function Progress({ history }) {
                   <td className="py-3 pr-4">{item.hyperactivity ?? "-"}</td>
                   <td className="py-3 pr-4">{item.energy}/10</td>
                   <td className="py-3 pr-4">{item.sleep} hrs</td>
-                  <td className="py-3 pr-4">{item.exercise ?? "-"}/10</td>
                 </tr>
               ))}
             </tbody>
@@ -1076,162 +930,6 @@ function Nutrition({ nutritionPlan, anxiety, stress, energy }) {
   );
 }
 
-
-function FoodLog({ foodEntry, setFoodEntry, foodLog, addFoodEntry }) {
-  const averageEnergy =
-    foodLog.length > 0
-      ? Math.round(foodLog.reduce((sum, item) => sum + Number(item.energyAfter || 0), 0) / foodLog.length)
-      : 0;
-
-  const highEnergyFoods = foodLog
-    .filter((item) => Number(item.energyAfter) >= 7)
-    .slice(0, 3);
-
-  const lowEnergyFoods = foodLog
-    .filter((item) => Number(item.energyAfter) <= 4)
-    .slice(0, 3);
-
-  return (
-    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
-      <Card className="p-6 bg-gradient-to-r from-blue-700 via-sky-500 to-teal-400 text-white border-none shadow-xl shadow-blue-100">
-        <p className="text-blue-100 font-semibold mb-2">Food Tracking</p>
-        <h2 className="text-4xl font-black mb-3">Daily Food Log</h2>
-        <p className="text-blue-50 max-w-2xl">
-          Track what you eat, how it affects your mood, and your energy after meals. Vitamind can use this pattern to help improve your nutrition suggestions.
-        </p>
-      </Card>
-
-      <Card className="p-6">
-        <h3 className="text-2xl font-black mb-4">Add a Meal or Snack</h3>
-
-        <div className="grid md:grid-cols-2 gap-4 mb-4">
-          <div>
-            <label className="block font-bold mb-2">Meal Type</label>
-            <select
-              value={foodEntry.meal}
-              onChange={(e) => setFoodEntry({ ...foodEntry, meal: e.target.value })}
-              className="w-full rounded-2xl border border-blue-100 px-4 py-3 outline-none focus:ring-2 focus:ring-blue-200"
-            >
-              <option>Breakfast</option>
-              <option>Lunch</option>
-              <option>Dinner</option>
-              <option>Snack</option>
-              <option>Drink</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block font-bold mb-2">Mood After Eating</label>
-            <select
-              value={foodEntry.mood}
-              onChange={(e) => setFoodEntry({ ...foodEntry, mood: e.target.value })}
-              className="w-full rounded-2xl border border-blue-100 px-4 py-3 outline-none focus:ring-2 focus:ring-blue-200"
-            >
-              <option>Calm</option>
-              <option>Focused</option>
-              <option>Neutral</option>
-              <option>Tired</option>
-              <option>Sluggish</option>
-              <option>Anxious</option>
-              <option>Energized</option>
-            </select>
-          </div>
-        </div>
-
-        <div className="mb-4">
-          <label className="block font-bold mb-2">What did you eat?</label>
-          <textarea
-            value={foodEntry.food}
-            onChange={(e) => setFoodEntry({ ...foodEntry, food: e.target.value })}
-            placeholder="Example: eggs, toast, berries, coffee, water..."
-            className="w-full rounded-2xl border border-blue-100 px-4 py-3 outline-none focus:ring-2 focus:ring-blue-200 min-h-[100px]"
-          />
-        </div>
-
-        <div className="mb-4">
-          <Slider
-            label="Energy After Eating"
-            value={foodEntry.energyAfter}
-            setValue={(value) => setFoodEntry({ ...foodEntry, energyAfter: value })}
-          />
-        </div>
-
-        <div className="mb-5">
-          <label className="block font-bold mb-2">Notes</label>
-          <input
-            value={foodEntry.notes}
-            onChange={(e) => setFoodEntry({ ...foodEntry, notes: e.target.value })}
-            placeholder="Example: felt full, cravings later, stomach felt off, better focus..."
-            className="w-full rounded-2xl border border-blue-100 px-4 py-3 outline-none focus:ring-2 focus:ring-blue-200"
-          />
-        </div>
-
-        <Button onClick={addFoodEntry} className="w-full">
-          Save Food Entry
-        </Button>
-      </Card>
-
-      <div className="grid md:grid-cols-3 gap-4">
-        <Metric icon={Utensils} label="Food Entries" value={foodLog.length} color="text-blue-600" bg="bg-blue-50" />
-        <Metric icon={TrendingUp} label="Avg Food Energy" value={`${averageEnergy}/10`} color="text-teal-600" bg="bg-teal-50" />
-        <Metric icon={Apple} label="Nutrition Pattern" value={averageEnergy >= 7 ? "Strong" : averageEnergy <= 4 ? "Needs Work" : "Balanced"} color="text-sky-600" bg="bg-sky-50" />
-      </div>
-
-      <Card className="p-6">
-        <h3 className="text-2xl font-black mb-4">Food Pattern Insights</h3>
-
-        <div className="grid md:grid-cols-2 gap-4">
-          <div className="rounded-2xl bg-green-50 border border-green-100 p-4">
-            <h4 className="font-black text-green-700 mb-2">Meals that supported energy</h4>
-            {highEnergyFoods.length > 0 ? (
-              <ul className="space-y-2 text-slate-700">
-                {highEnergyFoods.map((item, i) => (
-                  <li key={i}>✓ {item.meal}: {item.food}</li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-slate-600">Add more entries to identify helpful foods.</p>
-            )}
-          </div>
-
-          <div className="rounded-2xl bg-orange-50 border border-orange-100 p-4">
-            <h4 className="font-black text-orange-700 mb-2">Meals to review</h4>
-            {lowEnergyFoods.length > 0 ? (
-              <ul className="space-y-2 text-slate-700">
-                {lowEnergyFoods.map((item, i) => (
-                  <li key={i}>• {item.meal}: {item.food}</li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-slate-600">No low-energy meal patterns yet.</p>
-            )}
-          </div>
-        </div>
-      </Card>
-
-      <Card className="p-6">
-        <h3 className="text-2xl font-black mb-4">Recent Food Log</h3>
-
-        <div className="space-y-3">
-          {foodLog.map((item, i) => (
-            <div key={`${item.date}-${i}`} className="rounded-2xl bg-blue-50 border border-blue-100 p-4">
-              <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-                <p className="font-black text-blue-700">{item.meal}</p>
-                <p className="text-sm text-slate-500">{item.date}</p>
-              </div>
-
-              <p className="font-semibold text-slate-800">{item.food}</p>
-              <p className="text-sm text-slate-600 mt-1">Mood: {item.mood} • Energy After: {item.energyAfter}/10</p>
-              {item.notes && <p className="text-sm text-slate-500 mt-1">Notes: {item.notes}</p>}
-            </div>
-          ))}
-        </div>
-      </Card>
-    </motion.div>
-  );
-}
-
-
 function Coach({ messages, input, setInput, send }) {
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
@@ -1265,93 +963,6 @@ function Coach({ messages, input, setInput, send }) {
     </motion.div>
   );
 }
-
-
-function Support() {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="space-y-5"
-    >
-      <Card className="p-8 bg-gradient-to-r from-blue-700 via-sky-500 to-teal-400 text-white border-none shadow-xl shadow-blue-100">
-        <p className="text-blue-100 font-semibold mb-2">
-          Vitamind Customer Support
-        </p>
-
-        <h2 className="text-5xl font-black mb-4">
-          We’re here to help
-        </h2>
-
-        <p className="text-blue-50 text-lg max-w-3xl leading-relaxed">
-          Need help with your account, subscriptions, AI Coach, wellness tracking,
-          billing, food logs, fitness plans, or community support? Reach out to the
-          Vitamind support team anytime.
-        </p>
-      </Card>
-
-      <div className="grid md:grid-cols-2 gap-5">
-        <Card className="p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="h-14 w-14 rounded-2xl bg-blue-100 flex items-center justify-center">
-              <Mail className="text-blue-700" size={28} />
-            </div>
-
-            <div>
-              <h3 className="text-2xl font-black">
-                Contact Support
-              </h3>
-
-              <p className="text-slate-500">
-                Customer Service Email
-              </p>
-            </div>
-          </div>
-
-          <a
-            href="mailto:customerservicethevitamind@gmail.com"
-            className="block rounded-2xl bg-blue-600 text-white text-center font-bold px-5 py-4 hover:bg-blue-700 transition"
-          >
-            customerservicethevitamind@gmail.com
-          </a>
-
-          <p className="text-slate-500 text-sm mt-4">
-            Typical response time: 24–48 hours.
-          </p>
-        </Card>
-
-        <Card className="p-6 bg-gradient-to-br from-blue-50 to-white border border-blue-100">
-          <h3 className="text-2xl font-black mb-4">
-            Common Support Topics
-          </h3>
-
-          <div className="space-y-3 text-slate-700">
-            <p>✓ Subscription & billing support</p>
-            <p>✓ AI Coach connection issues</p>
-            <p>✓ Wellness tracking questions</p>
-            <p>✓ Fitness and nutrition recommendations</p>
-            <p>✓ Food tracking & insights</p>
-            <p>✓ Community & account support</p>
-            <p>✓ Login and premium access help</p>
-          </div>
-        </Card>
-      </div>
-
-      <Card className="p-6 text-center border-2 border-blue-200">
-        <h3 className="text-3xl font-black mb-3">
-          Vitamind Support Mission
-        </h3>
-
-        <p className="text-slate-600 max-w-3xl mx-auto leading-relaxed">
-          Our goal is to provide a supportive, safe, and helpful experience while
-          helping users connect mental health, fitness, nutrition, recovery,
-          movement, and long-term wellness in one platform.
-        </p>
-      </Card>
-    </motion.div>
-  );
-}
-
 
 function Pricing({ subscribed, setSubscribed }) {
   return (
