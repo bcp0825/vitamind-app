@@ -14,6 +14,7 @@ import {
   Moon,
   Send,
   ShieldCheck,
+  Mail,
   Smile,
   Sparkles,
   TrendingUp,
@@ -478,6 +479,7 @@ function App() {
             {screen === "coach" && HAS_ACCESS && <Coach messages={messages} input={input} setInput={setInput} send={send} />}
             {screen === "community" && HAS_ACCESS && <Community posts={posts} setPosts={setPosts} />}
             {screen === "pricing" && <Pricing subscribed={subscribed} setSubscribed={setSubscribed} />}
+            {screen === "support" && <Support />}
 
             {!HAS_ACCESS &&
               screen !== "website" &&
@@ -1263,6 +1265,93 @@ function Coach({ messages, input, setInput, send }) {
     </motion.div>
   );
 }
+
+
+function Support() {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="space-y-5"
+    >
+      <Card className="p-8 bg-gradient-to-r from-blue-700 via-sky-500 to-teal-400 text-white border-none shadow-xl shadow-blue-100">
+        <p className="text-blue-100 font-semibold mb-2">
+          Vitamind Customer Support
+        </p>
+
+        <h2 className="text-5xl font-black mb-4">
+          We’re here to help
+        </h2>
+
+        <p className="text-blue-50 text-lg max-w-3xl leading-relaxed">
+          Need help with your account, subscriptions, AI Coach, wellness tracking,
+          billing, food logs, fitness plans, or community support? Reach out to the
+          Vitamind support team anytime.
+        </p>
+      </Card>
+
+      <div className="grid md:grid-cols-2 gap-5">
+        <Card className="p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="h-14 w-14 rounded-2xl bg-blue-100 flex items-center justify-center">
+              <Mail className="text-blue-700" size={28} />
+            </div>
+
+            <div>
+              <h3 className="text-2xl font-black">
+                Contact Support
+              </h3>
+
+              <p className="text-slate-500">
+                Customer Service Email
+              </p>
+            </div>
+          </div>
+
+          <a
+            href="mailto:customerservicethevitamind@gmail.com"
+            className="block rounded-2xl bg-blue-600 text-white text-center font-bold px-5 py-4 hover:bg-blue-700 transition"
+          >
+            customerservicethevitamind@gmail.com
+          </a>
+
+          <p className="text-slate-500 text-sm mt-4">
+            Typical response time: 24–48 hours.
+          </p>
+        </Card>
+
+        <Card className="p-6 bg-gradient-to-br from-blue-50 to-white border border-blue-100">
+          <h3 className="text-2xl font-black mb-4">
+            Common Support Topics
+          </h3>
+
+          <div className="space-y-3 text-slate-700">
+            <p>✓ Subscription & billing support</p>
+            <p>✓ AI Coach connection issues</p>
+            <p>✓ Wellness tracking questions</p>
+            <p>✓ Fitness and nutrition recommendations</p>
+            <p>✓ Food tracking & insights</p>
+            <p>✓ Community & account support</p>
+            <p>✓ Login and premium access help</p>
+          </div>
+        </Card>
+      </div>
+
+      <Card className="p-6 text-center border-2 border-blue-200">
+        <h3 className="text-3xl font-black mb-3">
+          Vitamind Support Mission
+        </h3>
+
+        <p className="text-slate-600 max-w-3xl mx-auto leading-relaxed">
+          Our goal is to provide a supportive, safe, and helpful experience while
+          helping users connect mental health, fitness, nutrition, recovery,
+          movement, and long-term wellness in one platform.
+        </p>
+      </Card>
+    </motion.div>
+  );
+}
+
 
 function Pricing({ subscribed, setSubscribed }) {
   return (
