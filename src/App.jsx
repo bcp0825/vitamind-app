@@ -552,7 +552,7 @@ function App() {
   }
 
   async function manageSubscription() {
-    if (!session?.user?.email) {
+    if (!session) {
       setScreen("auth");
       return;
     }
@@ -570,18 +570,13 @@ function App() {
 
       const data = await response.json();
 
-      if (!response.ok) {
-        alert(data.error || "Unable to open billing portal.");
-        return;
-      }
-
       if (data.url) {
         window.location.href = data.url;
       } else {
-        alert("Stripe did not return a billing portal URL.");
+        alert(data.error || "Unable to open billing portal.");
       }
     } catch (error) {
-      alert("Billing portal connection failed: " + error.message);
+      alert("Billing portal connection failed.");
     }
   }
 
@@ -787,6 +782,7 @@ function App() {
               ["home", Home, "Dashboard"],
               ["checkin", Smile, "Check-In"],
               ["progress", BarChart3, "Progress"],
+              ["insights", TrendingUp, "Insights"],
               ["fitness", Dumbbell, "Fitness"],
               ["nutrition", Apple, "Nutrition"],
               ["foodlog", Utensils, "Food Log"],
@@ -831,7 +827,6 @@ function App() {
                 handleLogout={handleLogout}
                 subscriptionStatus={subscriptionStatus}
                 startCheckout={startCheckout}
-                manageSubscription={manageSubscription}
               />
             )}
             {screen === "home" && HAS_ACCESS && (
@@ -876,6 +871,7 @@ function App() {
               />
             )}
             {screen === "progress" && HAS_ACCESS && <Progress history={history} />}
+            {screen === "insights" && HAS_ACCESS && <Insights history={history} foodLog={foodLog} setScreen={setScreen} />}
             {screen === "fitness" && HAS_ACCESS && (
               <Fitness
                 plan={plan}
@@ -1316,6 +1312,7 @@ function HomeScreen({ depression, anxiety, stress, motivation, sleep, plan, nutr
         <Action title="Suggested Workout" icon={Dumbbell} text={`${plan.time}: ${plan.items[0]}`} onClick={() => setScreen("fitness")} />
         <Action title="Mood Nutrition" icon={Apple} text={nutritionPlan.focus} onClick={() => setScreen("nutrition")} />
         <Action title="Talk to AI Coach" icon={MessageCircle} text="Ask for support based on your mood and stress." onClick={() => setScreen("coach")} />
+        <Action title="Insights Dashboard" icon={TrendingUp} text="See trends from check-ins, sleep, exercise, and food logs." onClick={() => setScreen("insights")} />
       </div>
     </motion.div>
   );
@@ -1441,6 +1438,218 @@ function Slider({ label, value, setValue, min = 1, max = 10, suffix = "/10" }) {
     </div>
   );
 }
+
+
+function Insights({ history, foodLog, setScreen }) {
+  const safeHistory = Array.isArray(history) ? history : [];
+  const safeFoodLog = Array.isArray(foodLog) ? foodLog : [];
+
+  const recent = safeHistory.slice(0, 7);
+
+  const avg = (key) => {
+    const valid = recent
+      .map((item) => Number(item[key]))
+      .filter((value) => !Number.isNaN(value));
+
+    if (!valid.length) return 0;
+
+    return Math.round((valid.reduce((sum, value) => sum + value, 0) / valid.length) * 10) / 10;
+  };
+
+  const latest = recent[0] || {};
+  const oldest = recent[recent.length - 1] || {};
+
+  const trend = (key, lowerIsBetter = false) => {
+    if (!latest[key] || !oldest[key] || recent.length < 2) return "Not enough data yet";
+
+    const change = Number(latest[key]) - Number(oldest[key]);
+
+    if (change === 0) return "Stable";
+
+    const improved = lowerIsBetter ? change < 0 : change > 0;
+
+    return improved
+      ? `Improved by ${Math.abs(change)}`
+      : `Changed by ${Math.abs(change)}`;
+  };
+
+  const highEnergyFoods = safeFoodLog
+    .filter((item) => Number(item.energyAfter) >= 7)
+    .slice(0, 5);
+
+  const lowEnergyFoods = safeFoodLog
+    .filter((item) => Number(item.energyAfter) <= 4)
+    .slice(0, 5);
+
+  const averageFoodEnergy =
+    safeFoodLog.length > 0
+      ? Math.round(
+          (safeFoodLog.reduce((sum, item) => sum + Number(item.energyAfter || 0), 0) /
+            safeFoodLog.length) *
+            10
+        ) / 10
+      : 0;
+
+  const sleepInsight =
+    avg("sleep") >= 7
+      ? "Your recent sleep average is in a strong range. Keep protecting your sleep routine."
+      : avg("sleep") > 0
+      ? "Your recent sleep average is below 7 hours. Recovery, mood, and energy may improve with more consistent sleep."
+      : "Add more check-ins to generate sleep insights.";
+
+  const exerciseInsight =
+    avg("exercise") >= 6
+      ? "Your recent exercise consistency is strong. This may support mood, energy, and stress regulation."
+      : avg("exercise") > 0
+      ? "Your exercise consistency has room to grow. Start small with walks, stretching, or short workouts."
+      : "Add exercise ratings in check-ins to generate activity insights.";
+
+  const stressInsight =
+    avg("stress") >= 7 || avg("anxiety") >= 7
+      ? "Stress or anxiety has been elevated recently. Recovery-based workouts, steady meals, and breathing skills may help."
+      : avg("stress") > 0
+      ? "Your recent stress and anxiety averages are not in the highest range. Keep tracking patterns."
+      : "Add more check-ins to generate stress insights.";
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
+      <Card className="p-6 bg-gradient-to-r from-blue-700 via-sky-500 to-teal-400 text-white border-none shadow-xl shadow-blue-100">
+        <p className="text-blue-100 font-semibold mb-2">Vitamind Insights</p>
+        <h2 className="text-4xl md:text-5xl font-black mb-3">Your Wellness Patterns</h2>
+        <p className="text-blue-50 max-w-3xl">
+          Insights use your saved check-ins and food logs to help you understand patterns in mood, sleep, exercise, energy, and nutrition.
+        </p>
+
+        <div className="flex flex-wrap gap-3 mt-5">
+          <Button onClick={() => setScreen("checkin")} variant="secondary" className="bg-white text-blue-700 hover:bg-blue-50">
+            Add Check-In
+          </Button>
+          <Button onClick={() => setScreen("foodlog")} variant="secondary" className="bg-blue-900/30 text-white hover:bg-blue-900/40">
+            Add Food Log
+          </Button>
+        </div>
+      </Card>
+
+      <div className="grid md:grid-cols-4 gap-4">
+        <Metric icon={Waves} label="Avg Anxiety" value={`${avg("anxiety")}/10`} color="text-sky-600" bg="bg-sky-50" />
+        <Metric icon={Brain} label="Avg Depression" value={`${avg("depression")}/10`} color="text-indigo-600" bg="bg-indigo-50" />
+        <Metric icon={Moon} label="Avg Sleep" value={`${avg("sleep")} hrs`} color="text-blue-600" bg="bg-blue-50" />
+        <Metric icon={Activity} label="Avg Exercise" value={`${avg("exercise")}/10`} color="text-teal-600" bg="bg-teal-50" />
+      </div>
+
+      <div className="grid md:grid-cols-2 gap-4">
+        <Card className="p-6">
+          <h3 className="text-2xl font-black mb-4">7-Day Trend Snapshot</h3>
+
+          <div className="space-y-3">
+            <InsightRow label="Anxiety" value={trend("anxiety", true)} />
+            <InsightRow label="Depression" value={trend("depression", true)} />
+            <InsightRow label="Stress" value={trend("stress", true)} />
+            <InsightRow label="Sleep" value={trend("sleep", false)} />
+            <InsightRow label="Exercise" value={trend("exercise", false)} />
+          </div>
+        </Card>
+
+        <Card className="p-6 bg-gradient-to-br from-blue-50 to-white border border-blue-100">
+          <h3 className="text-2xl font-black mb-4">Personalized Wellness Notes</h3>
+
+          <div className="space-y-3 text-slate-700">
+            <p>💤 {sleepInsight}</p>
+            <p>🏃 {exerciseInsight}</p>
+            <p>🧠 {stressInsight}</p>
+            <p>
+              🍎 {averageFoodEnergy > 0
+                ? `Your average food-related energy rating is ${averageFoodEnergy}/10.`
+                : "Add food logs to generate nutrition energy insights."}
+            </p>
+          </div>
+        </Card>
+      </div>
+
+      <Card className="p-6">
+        <h3 className="text-2xl font-black mb-4">Check-In Pattern Grid</h3>
+
+        {recent.length > 0 ? (
+          <div className="grid grid-cols-2 md:grid-cols-7 gap-2">
+            {recent.map((item, i) => (
+              <div key={`${item.date}-${i}`} className="rounded-2xl bg-blue-50 border border-blue-100 p-3 text-center">
+                <p className="text-xs text-slate-500 font-bold mb-2">{item.date}</p>
+                <p className="text-sm text-slate-700">Anx {item.anxiety ?? "-"}</p>
+                <p className="text-sm text-slate-700">Mood {item.depression ?? "-"}</p>
+                <p className="text-sm text-slate-700">Sleep {item.sleep ?? "-"}</p>
+                <p className="text-sm text-slate-700">Ex {item.exercise ?? "-"}</p>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-slate-600">No check-ins yet. Add a check-in to begin building insights.</p>
+        )}
+      </Card>
+
+      <div className="grid md:grid-cols-2 gap-4">
+        <Card className="p-6">
+          <h3 className="text-2xl font-black mb-4 text-green-700">Foods Supporting Energy</h3>
+
+          {highEnergyFoods.length > 0 ? (
+            <div className="space-y-3">
+              {highEnergyFoods.map((item, i) => (
+                <div key={`${item.date}-high-${i}`} className="rounded-2xl bg-green-50 border border-green-100 p-4">
+                  <p className="font-black">{item.meal}</p>
+                  <p className="text-slate-700">{item.food}</p>
+                  <p className="text-sm text-slate-500 mt-1">
+                    Mood: {item.mood} • Energy: {item.energyAfter}/10
+                  </p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-slate-600">No high-energy food patterns yet. Keep logging meals.</p>
+          )}
+        </Card>
+
+        <Card className="p-6">
+          <h3 className="text-2xl font-black mb-4 text-orange-700">Foods to Review</h3>
+
+          {lowEnergyFoods.length > 0 ? (
+            <div className="space-y-3">
+              {lowEnergyFoods.map((item, i) => (
+                <div key={`${item.date}-low-${i}`} className="rounded-2xl bg-orange-50 border border-orange-100 p-4">
+                  <p className="font-black">{item.meal}</p>
+                  <p className="text-slate-700">{item.food}</p>
+                  <p className="text-sm text-slate-500 mt-1">
+                    Mood: {item.mood} • Energy: {item.energyAfter}/10
+                  </p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-slate-600">No low-energy meal patterns yet.</p>
+          )}
+        </Card>
+      </div>
+
+      <Card className="p-6 text-center border-2 border-blue-200">
+        <h3 className="text-2xl font-black mb-3">Ask AI About These Insights</h3>
+        <p className="text-slate-600 mb-5">
+          Your AI Coach can now use recent check-ins and food logs to explain patterns and suggest practical next steps.
+        </p>
+        <Button onClick={() => setScreen("coach")}>
+          Ask AI Coach
+        </Button>
+      </Card>
+    </motion.div>
+  );
+}
+
+function InsightRow({ label, value }) {
+  return (
+    <div className="flex items-center justify-between rounded-2xl bg-blue-50 border border-blue-100 px-4 py-3">
+      <span className="font-bold text-slate-700">{label}</span>
+      <span className="font-black text-blue-700">{value}</span>
+    </div>
+  );
+}
+
 
 function Progress({ history }) {
   const weekly = history.slice(0, 7);
