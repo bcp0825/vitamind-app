@@ -760,6 +760,10 @@ function App() {
               ["community", Users, "Community"],
               ["pricing", CreditCard, "Subscription"],
               ["support", Mail, "Support"],
+              ["privacy", ShieldCheck, "Privacy"],
+              ["terms", ShieldCheck, "Terms"],
+              ["disclaimer", ShieldCheck, "Disclaimer"],
+              ["subscriptionPolicy", CreditCard, "Policy"],
             ].map(([key, Icon, label]) => (
               <button
                 key={key}
@@ -870,12 +874,20 @@ function App() {
             {screen === "coach" && HAS_ACCESS && <Coach messages={messages} input={input} setInput={setInput} send={send} />}
             {screen === "community" && HAS_ACCESS && <Community posts={posts} setPosts={setPosts} session={session} loadCommunityPosts={loadCommunityPosts} />}
             {screen === "pricing" && <Pricing subscribed={subscribed} setSubscribed={setSubscribed} startCheckout={startCheckout} session={session} />}
+            {screen === "privacy" && <PrivacyPolicy />}
+            {screen === "terms" && <TermsOfService />}
+            {screen === "disclaimer" && <MedicalDisclaimer />}
+            {screen === "subscriptionPolicy" && <SubscriptionPolicy />}
             {screen === "support" && <Support />}
 
             {!HAS_ACCESS &&
               screen !== "website" &&
               screen !== "pricing" &&
-              screen !== "auth" && (
+              screen !== "auth" &&
+              screen !== "privacy" &&
+              screen !== "terms" &&
+              screen !== "disclaimer" &&
+              screen !== "subscriptionPolicy" && (
                 <Card className="p-10 text-center">
                   <h2 className="text-4xl font-black mb-4 text-blue-700">
                     Unlock Vitamind Premium
@@ -896,6 +908,9 @@ function App() {
               )}
           </main>
         </div>
+
+          <Footer setScreen={setScreen} />
+
       </div>
     </div>
   );
@@ -1829,6 +1844,234 @@ function Support() {
         </p>
       </Card>
     </motion.div>
+  );
+}
+
+
+
+function LegalPage({ title, subtitle, children }) {
+  return (
+    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
+      <Card className="p-8 bg-gradient-to-r from-blue-700 via-sky-500 to-teal-400 text-white border-none shadow-xl shadow-blue-100">
+        <p className="text-blue-100 font-semibold mb-2">Vitamind Legal Information</p>
+        <h2 className="text-4xl md:text-5xl font-black mb-4">{title}</h2>
+        <p className="text-blue-50 text-lg max-w-3xl">{subtitle}</p>
+      </Card>
+
+      <Card className="p-6 md:p-8">
+        <div className="prose prose-slate max-w-none">
+          {children}
+        </div>
+      </Card>
+    </motion.div>
+  );
+}
+
+function PrivacyPolicy() {
+  return (
+    <LegalPage
+      title="Privacy Policy"
+      subtitle="How Vitamind collects, uses, protects, and manages user information."
+    >
+      <p className="text-sm text-slate-500 mb-6">
+        <strong>Effective Date:</strong> June 2026
+      </p>
+
+      <h3 className="text-2xl font-black mb-3">Information We Collect</h3>
+      <p className="text-slate-700 mb-4">
+        Vitamind may collect account information such as name, email address, login details,
+        mental wellness check-in responses, fitness information, food log entries, community
+        posts, support requests, and subscription information.
+      </p>
+
+      <h3 className="text-2xl font-black mb-3">How We Use Information</h3>
+      <p className="text-slate-700 mb-4">
+        We use information to provide personalized wellness recommendations, AI coaching,
+        progress tracking, food pattern insights, customer support, subscription access,
+        and platform improvements.
+      </p>
+
+      <h3 className="text-2xl font-black mb-3">Payments</h3>
+      <p className="text-slate-700 mb-4">
+        Payment information is processed by Stripe. Vitamind does not store full credit card
+        information on its servers.
+      </p>
+
+      <h3 className="text-2xl font-black mb-3">Third-Party Services</h3>
+      <p className="text-slate-700 mb-4">
+        Vitamind may use third-party services including Supabase, Stripe, OpenAI, and hosting
+        providers to operate the platform.
+      </p>
+
+      <h3 className="text-2xl font-black mb-3">Data Requests</h3>
+      <p className="text-slate-700 mb-4">
+        Users may request account deletion, data correction, or data removal by contacting
+        customer support.
+      </p>
+
+      <p className="font-bold text-blue-700">
+        Contact: customerservicethevitamind@gmail.com
+      </p>
+    </LegalPage>
+  );
+}
+
+function TermsOfService() {
+  return (
+    <LegalPage
+      title="Terms of Service"
+      subtitle="Rules and expectations for using the Vitamind platform."
+    >
+      <p className="text-sm text-slate-500 mb-6">
+        <strong>Effective Date:</strong> June 2026
+      </p>
+
+      <h3 className="text-2xl font-black mb-3">Eligibility</h3>
+      <p className="text-slate-700 mb-4">
+        Users must be at least 18 years old to use Vitamind.
+      </p>
+
+      <h3 className="text-2xl font-black mb-3">Account Responsibility</h3>
+      <p className="text-slate-700 mb-4">
+        Users are responsible for maintaining account security and all activity that occurs
+        under their account.
+      </p>
+
+      <h3 className="text-2xl font-black mb-3">Acceptable Use</h3>
+      <p className="text-slate-700 mb-4">
+        Users may not harass others, post harmful or illegal content, misuse AI features,
+        attempt unauthorized access, or disrupt platform operations.
+      </p>
+
+      <h3 className="text-2xl font-black mb-3">Community Guidelines</h3>
+      <p className="text-slate-700 mb-4">
+        Community spaces are intended for respectful, supportive conversation. Vitamind may
+        remove content or restrict accounts that violate community standards.
+      </p>
+
+      <h3 className="text-2xl font-black mb-3">Service Changes</h3>
+      <p className="text-slate-700 mb-4">
+        Vitamind may modify, update, suspend, or discontinue features at any time.
+      </p>
+
+      <h3 className="text-2xl font-black mb-3">Limitation of Liability</h3>
+      <p className="text-slate-700 mb-4">
+        Vitamind is provided as-is without warranties of any kind. To the fullest extent
+        permitted by law, Vitamind is not liable for indirect, incidental, or consequential damages.
+      </p>
+
+      <p className="font-bold text-blue-700">
+        Contact: customerservicethevitamind@gmail.com
+      </p>
+    </LegalPage>
+  );
+}
+
+function MedicalDisclaimer() {
+  return (
+    <LegalPage
+      title="Medical Disclaimer"
+      subtitle="Important information about the wellness and AI guidance provided by Vitamind."
+    >
+      <h3 className="text-2xl font-black mb-3">Not Medical Advice</h3>
+      <p className="text-slate-700 mb-4">
+        Vitamind is not a healthcare provider. Information, check-ins, food suggestions,
+        fitness recommendations, and AI responses are for educational and wellness support
+        purposes only and are not medical advice.
+      </p>
+
+      <h3 className="text-2xl font-black mb-3">No Clinical Relationship</h3>
+      <p className="text-slate-700 mb-4">
+        Use of Vitamind does not create a therapist-client, physician-patient, dietitian-client,
+        or other licensed healthcare relationship.
+      </p>
+
+      <h3 className="text-2xl font-black mb-3">Emergency Situations</h3>
+      <p className="text-slate-700 mb-4">
+        If you are experiencing suicidal thoughts, thoughts of harming yourself or others, a
+        medical emergency, or a mental health crisis, call 911, your local emergency number,
+        or the 988 Suicide & Crisis Lifeline immediately.
+      </p>
+
+      <h3 className="text-2xl font-black mb-3">Professional Guidance</h3>
+      <p className="text-slate-700 mb-4">
+        Always consult qualified healthcare professionals before making medical, psychiatric,
+        fitness, or nutrition decisions.
+      </p>
+
+      <h3 className="text-2xl font-black mb-3">AI Limitations</h3>
+      <p className="text-slate-700 mb-4">
+        AI-generated responses may contain errors or incomplete information and should not
+        be used as a sole source of health guidance.
+      </p>
+    </LegalPage>
+  );
+}
+
+function SubscriptionPolicy() {
+  return (
+    <LegalPage
+      title="Subscription & Cancellation Policy"
+      subtitle="Information about Vitamind Premium billing, cancellation, and access."
+    >
+      <h3 className="text-2xl font-black mb-3">Free Trial</h3>
+      <p className="text-slate-700 mb-4">
+        New users may receive a 7-day free trial when offered during checkout.
+      </p>
+
+      <h3 className="text-2xl font-black mb-3">Subscription Pricing</h3>
+      <p className="text-slate-700 mb-4">
+        Current pricing is displayed during Stripe checkout and may be updated periodically.
+      </p>
+
+      <h3 className="text-2xl font-black mb-3">Automatic Renewal</h3>
+      <p className="text-slate-700 mb-4">
+        Subscriptions automatically renew unless canceled before the next billing cycle.
+      </p>
+
+      <h3 className="text-2xl font-black mb-3">Cancellation</h3>
+      <p className="text-slate-700 mb-4">
+        Users may request cancellation support by emailing customerservicethevitamind@gmail.com.
+        If a Stripe customer portal is enabled, users may also manage billing through Stripe.
+      </p>
+
+      <h3 className="text-2xl font-black mb-3">Refunds</h3>
+      <p className="text-slate-700 mb-4">
+        Unless otherwise required by law, subscription payments are non-refundable.
+      </p>
+
+      <h3 className="text-2xl font-black mb-3">Access After Cancellation</h3>
+      <p className="text-slate-700 mb-4">
+        Users may retain access through the end of the paid billing period. After expiration,
+        premium features may become unavailable.
+      </p>
+
+      <p className="font-bold text-blue-700">
+        Contact: customerservicethevitamind@gmail.com
+      </p>
+    </LegalPage>
+  );
+}
+
+function Footer({ setScreen }) {
+  return (
+    <footer className="mt-8 rounded-3xl bg-white border border-blue-100 p-5 shadow-sm text-center">
+      <div className="flex flex-wrap justify-center gap-4 text-sm font-semibold text-blue-700 mb-3">
+        <button onClick={() => setScreen("privacy")} className="hover:underline">Privacy Policy</button>
+        <button onClick={() => setScreen("terms")} className="hover:underline">Terms of Service</button>
+        <button onClick={() => setScreen("disclaimer")} className="hover:underline">Medical Disclaimer</button>
+        <button onClick={() => setScreen("subscriptionPolicy")} className="hover:underline">Subscription Policy</button>
+        <button onClick={() => setScreen("support")} className="hover:underline">Contact Support</button>
+      </div>
+
+      <p className="text-xs text-slate-500">
+        Vitamind is a wellness support platform and does not replace medical, mental health, fitness, or nutrition care from qualified professionals.
+      </p>
+
+      <p className="text-xs text-slate-500 mt-2">
+        Support: customerservicethevitamind@gmail.com
+      </p>
+    </footer>
   );
 }
 
