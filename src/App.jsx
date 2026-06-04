@@ -343,12 +343,46 @@ function App() {
     }
   }
 
+  async function loadFoodLogs(currentSession) {
+    if (!currentSession?.user?.id) return;
+
+    const { data, error } = await supabase
+      .from("food_logs")
+      .select("*")
+      .eq("user_id", currentSession.user.id)
+      .order("created_at", { ascending: false })
+      .limit(50);
+
+    if (error) {
+      console.error("Error loading food logs:", error);
+      return;
+    }
+
+    if (data && data.length > 0) {
+      const formatted = data.map((item) => ({
+        date: new Date(item.created_at).toLocaleDateString("en-US", {
+          weekday: "short",
+          month: "short",
+          day: "numeric",
+        }),
+        meal: item.meal || "Meal",
+        food: item.food || "",
+        mood: item.mood || item.mood_after || "Neutral",
+        energyAfter: item.energy_after ?? 5,
+        notes: item.notes || "",
+      }));
+
+      setFoodLog(formatted);
+    }
+  }
+
   useEffect(() => {
     async function loadSession() {
       const { data } = await supabase.auth.getSession();
       setSession(data.session);
       await loadProfile(data.session);
       await loadCheckins(data.session);
+      await loadFoodLogs(data.session);
     }
 
     loadSession();
@@ -359,6 +393,7 @@ function App() {
       setSession(currentSession);
       await loadProfile(currentSession);
       await loadCheckins(currentSession);
+      await loadFoodLogs(currentSession);
     });
 
     return () => subscription.unsubscribe();
@@ -510,7 +545,7 @@ function App() {
     setScreen("home");
   }
 
-  function addFoodEntry() {
+  async function addFoodEntry() {
     if (!foodEntry.food.trim()) return;
 
     const today = new Date().toLocaleDateString("en-US", {
@@ -519,17 +554,35 @@ function App() {
       day: "numeric",
     });
 
-    setFoodLog((prev) => [
-      {
-        date: today,
+    const newEntry = {
+      date: today,
+      meal: foodEntry.meal,
+      food: foodEntry.food.trim(),
+      mood: foodEntry.mood,
+      energyAfter: foodEntry.energyAfter,
+      notes: foodEntry.notes.trim(),
+    };
+
+    setFoodLog((prev) => [newEntry, ...prev]);
+
+    if (session?.user?.id) {
+      const { error } = await supabase.from("food_logs").insert({
+        user_id: session.user.id,
         meal: foodEntry.meal,
         food: foodEntry.food.trim(),
         mood: foodEntry.mood,
-        energyAfter: foodEntry.energyAfter,
+        mood_after: foodEntry.mood,
+        energy_after: foodEntry.energyAfter,
         notes: foodEntry.notes.trim(),
-      },
-      ...prev,
-    ]);
+      });
+
+      if (error) {
+        console.error("Error saving food log:", error);
+        alert("Food entry saved on screen, but it did not save to Supabase.");
+      } else {
+        await loadFoodLogs(session);
+      }
+    }
 
     setFoodEntry({
       meal: "Breakfast",
