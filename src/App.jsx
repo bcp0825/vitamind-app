@@ -551,6 +551,35 @@ function App() {
     }
   }
 
+  async function manageSubscription() {
+    if (!session) {
+      setScreen("auth");
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/create-portal-session", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: session.user.email,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        alert(data.error || "Unable to open billing portal.");
+      }
+    } catch (error) {
+      alert("Billing portal connection failed.");
+    }
+  }
+
   async function saveCheckin() {
     const today = new Date().toLocaleDateString("en-US", {
       weekday: "short",
@@ -780,7 +809,8 @@ function App() {
           </nav>
 
           <main className="md:col-span-3">
-            {screen === "website" && <Website setScreen={setScreen} startCheckout={startCheckout} />}
+            {screen === "website" && <Website setScreen={setScreen} startCheckout={startCheckout}
+                manageSubscription={manageSubscription} />}
             {screen === "auth" && (
               <AuthScreen
                 session={session}
@@ -873,7 +903,7 @@ function App() {
             )}
             {screen === "coach" && HAS_ACCESS && <Coach messages={messages} input={input} setInput={setInput} send={send} />}
             {screen === "community" && HAS_ACCESS && <Community posts={posts} setPosts={setPosts} session={session} loadCommunityPosts={loadCommunityPosts} />}
-            {screen === "pricing" && <Pricing subscribed={subscribed} setSubscribed={setSubscribed} startCheckout={startCheckout} session={session} />}
+            {screen === "pricing" && <Pricing subscribed={subscribed} setSubscribed={setSubscribed} startCheckout={startCheckout} manageSubscription={manageSubscription} session={session} subscriptionStatus={subscriptionStatus} />}
             {screen === "privacy" && <PrivacyPolicy />}
             {screen === "terms" && <TermsOfService />}
             {screen === "disclaimer" && <MedicalDisclaimer />}
@@ -931,6 +961,7 @@ function AuthScreen({
   handleLogout,
   subscriptionStatus,
   startCheckout,
+  manageSubscription,
 }) {
   if (session) {
     return (
@@ -949,6 +980,12 @@ function AuthScreen({
             {subscriptionStatus !== "active" && (
               <Button onClick={startCheckout}>
                 Subscribe Now
+              </Button>
+            )}
+
+            {subscriptionStatus === "active" && (
+              <Button onClick={manageSubscription} variant="secondary">
+                Manage / Cancel Subscription
               </Button>
             )}
 
@@ -2032,7 +2069,7 @@ function SubscriptionPolicy() {
       <h3 className="text-2xl font-black mb-3">Cancellation</h3>
       <p className="text-slate-700 mb-4">
         Users may request cancellation support by emailing customerservicethevitamind@gmail.com.
-        If a Stripe customer portal is enabled, users may also manage billing through Stripe.
+        Active subscribers can manage or cancel billing directly through the Stripe customer portal from the Subscription page.
       </p>
 
       <h3 className="text-2xl font-black mb-3">Refunds</h3>
@@ -2076,7 +2113,7 @@ function Footer({ setScreen }) {
 }
 
 
-function Pricing({ subscribed, setSubscribed, startCheckout, session }) {
+function Pricing({ subscribed, setSubscribed, startCheckout, manageSubscription, session, subscriptionStatus }) {
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
       <Card className="p-6 bg-gradient-to-r from-blue-700 via-indigo-600 to-sky-500 text-white border-none shadow-xl shadow-blue-100">
@@ -2111,6 +2148,15 @@ function Pricing({ subscribed, setSubscribed, startCheckout, session }) {
           >
             {session ? "Start 7-Day Free Trial" : "Login to Start Free Trial"}
           </button>
+
+          {session && subscriptionStatus === "active" && (
+            <button
+              onClick={manageSubscription}
+              className="mt-3 block w-full text-center rounded-2xl px-4 py-4 font-semibold bg-blue-50 text-blue-700 hover:bg-blue-100 transition border border-blue-200"
+            >
+              Manage / Cancel Subscription
+            </button>
+          )}
           {subscribed && <p className="mt-4 text-center text-sm font-bold text-blue-700">Free trial active in prototype.</p>}
         </Card>
       </div>
