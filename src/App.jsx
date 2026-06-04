@@ -165,9 +165,6 @@ function App() {
   const [screen, setScreen] = useState("website");
   const [session, setSession] = useState(null);
   const [subscriptionStatus, setSubscriptionStatus] = useState("inactive");
-  const [adminStats, setAdminStats] = useState(null);
-  const [adminLoading, setAdminLoading] = useState(false);
-  const ADMIN_EMAIL = "bcp0825@gmail.com";
   const [authMode, setAuthMode] = useState("login");
   const [authEmail, setAuthEmail] = useState("");
   const [authPassword, setAuthPassword] = useState("");
@@ -189,7 +186,6 @@ function App() {
   // Set this to true only after you add real Stripe login/subscription verification.
   // For now, false locks premium features and sends users to Stripe.
   const HAS_ACCESS = subscriptionStatus === "active";
-  const IS_ADMIN = session?.user?.email === ADMIN_EMAIL;
   const [subscribed, setSubscribed] = useState(false);
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState([
@@ -445,9 +441,6 @@ function App() {
       await loadCheckins(data.session);
       await loadFoodLogs(data.session);
       await loadCommunityPosts();
-      if (data.session?.user?.email === ADMIN_EMAIL) {
-        await loadAdminStats(data.session);
-      }
     }
 
     loadSession();
@@ -460,9 +453,6 @@ function App() {
       await loadCheckins(currentSession);
       await loadFoodLogs(currentSession);
       await loadCommunityPosts();
-      if (currentSession?.user?.email === ADMIN_EMAIL) {
-        await loadAdminStats(currentSession);
-      }
     });
 
     return () => subscription.unsubscribe();
@@ -595,43 +585,6 @@ function App() {
     }
   }
 
-
-  async function loadAdminStats(currentSession = session) {
-    if (!currentSession?.user?.email || currentSession.user.email !== ADMIN_EMAIL) {
-      return;
-    }
-
-    setAdminLoading(true);
-
-    try {
-      const response = await fetch("/api/admin-stats", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: currentSession.user.email,
-          userId: currentSession.user.id,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        console.error("Admin stats error:", data.error);
-        alert(data.error || "Unable to load admin stats.");
-        return;
-      }
-
-      setAdminStats(data);
-    } catch (error) {
-      console.error("Admin stats connection failed:", error);
-      alert("Admin dashboard connection failed.");
-    } finally {
-      setAdminLoading(false);
-    }
-  }
-
   async function saveCheckin() {
     const today = new Date().toLocaleDateString("en-US", {
       weekday: "short",
@@ -733,37 +686,6 @@ function App() {
     });
   }
 
-  function buildAIMemory() {
-    const recentCheckins = history.slice(0, 7);
-    const recentFoodLogs = foodLog.slice(0, 10);
-
-    const averageNumber = (items, key) => {
-      const valid = items
-        .map((item) => Number(item[key]))
-        .filter((value) => Number.isFinite(value));
-
-      if (!valid.length) return null;
-
-      return Math.round((valid.reduce((sum, value) => sum + value, 0) / valid.length) * 10) / 10;
-    };
-
-    const latestCheckin = recentCheckins[0] || null;
-
-    return {
-      latestCheckin,
-      recentCheckins,
-      recentFoodLogs,
-      trends: {
-        averageSleep: averageNumber(recentCheckins, "sleep"),
-        averageExercise: averageNumber(recentCheckins, "exercise"),
-        averageAnxiety: averageNumber(recentCheckins, "anxiety"),
-        averageDepression: averageNumber(recentCheckins, "depression"),
-        averageStress: averageNumber(recentCheckins, "stress"),
-        averageFoodEnergy: averageNumber(recentFoodLogs, "energyAfter"),
-      },
-    };
-  }
-
   async function send() {
     if (!input.trim()) return;
 
@@ -804,7 +726,6 @@ function App() {
           },
           history,
           foodLog,
-          aiMemory: buildAIMemory(),
         }),
       });
 
@@ -871,7 +792,6 @@ function App() {
               ["foodlog", Utensils, "Food Log"],
               ["coach", MessageCircle, "AI Coach"],
               ["community", Users, "Community"],
-              ...(IS_ADMIN ? [["admin", BarChart3, "Admin"]] : []),
               ["pricing", CreditCard, "Subscription"],
               ["support", Mail, "Support"],
               ["privacy", ShieldCheck, "Privacy"],
@@ -989,13 +909,6 @@ function App() {
             )}
             {screen === "coach" && HAS_ACCESS && <Coach messages={messages} input={input} setInput={setInput} send={send} />}
             {screen === "community" && HAS_ACCESS && <Community posts={posts} setPosts={setPosts} session={session} loadCommunityPosts={loadCommunityPosts} />}
-            {screen === "admin" && IS_ADMIN && (
-              <AdminDashboard
-                adminStats={adminStats}
-                adminLoading={adminLoading}
-                loadAdminStats={loadAdminStats}
-              />
-            )}
             {screen === "pricing" && <Pricing subscribed={subscribed} setSubscribed={setSubscribed} startCheckout={startCheckout} manageSubscription={manageSubscription} session={session} subscriptionStatus={subscriptionStatus} />}
             {screen === "privacy" && <PrivacyPolicy />}
             {screen === "terms" && <TermsOfService />}
@@ -1010,8 +923,7 @@ function App() {
               screen !== "privacy" &&
               screen !== "terms" &&
               screen !== "disclaimer" &&
-              screen !== "subscriptionPolicy" &&
-              screen !== "admin" && (
+              screen !== "subscriptionPolicy" && (
                 <Card className="p-10 text-center">
                   <h2 className="text-4xl font-black mb-4 text-blue-700">
                     Unlock Vitamind Premium
@@ -1040,70 +952,6 @@ function App() {
   );
 }
 
-
-
-function AdminDashboard({ adminStats, adminLoading, loadAdminStats }) {
-  const stats = adminStats || {};
-
-  const statCards = [
-    ["Total Users", stats.totalUsers ?? "-", Users, "text-blue-600", "bg-blue-50"],
-    ["Active Subscribers", stats.activeSubscribers ?? "-", CreditCard, "text-teal-600", "bg-teal-50"],
-    ["Monthly Revenue", stats.monthlyRevenue || "-", TrendingUp, "text-green-600", "bg-green-50"],
-    ["Check-ins Today", stats.checkinsToday ?? "-", Smile, "text-purple-600", "bg-purple-50"],
-    ["Food Logs Today", stats.foodLogsToday ?? "-", Utensils, "text-orange-600", "bg-orange-50"],
-    ["Community Posts Today", stats.communityPostsToday ?? "-", MessageCircle, "text-indigo-600", "bg-indigo-50"],
-  ];
-
-  return (
-    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
-      <Card className="p-6 bg-gradient-to-r from-blue-900 via-blue-700 to-sky-500 text-white border-none shadow-xl shadow-blue-100">
-        <p className="text-blue-100 font-semibold mb-2">Founder Dashboard</p>
-        <h2 className="text-4xl font-black mb-3">Vitamind Admin Dashboard</h2>
-        <p className="text-blue-50 max-w-2xl">
-          Track user growth, active subscriptions, revenue estimate, and daily platform activity.
-        </p>
-
-        <button
-          onClick={() => loadAdminStats()}
-          className="mt-5 rounded-2xl px-5 py-3 font-bold bg-white text-blue-700 hover:bg-blue-50 transition"
-        >
-          {adminLoading ? "Refreshing..." : "Refresh Dashboard"}
-        </button>
-      </Card>
-
-      <div className="grid md:grid-cols-3 gap-4">
-        {statCards.map(([label, value, Icon, color, bg]) => (
-          <Metric key={label} icon={Icon} label={label} value={value} color={color} bg={bg} />
-        ))}
-      </div>
-
-      <Card className="p-6">
-        <h3 className="text-2xl font-black mb-4">Growth Notes</h3>
-        <div className="grid md:grid-cols-2 gap-4">
-          <div className="rounded-2xl bg-blue-50 p-4 border border-blue-100">
-            <p className="font-black text-blue-700 mb-1">Estimated MRR</p>
-            <p className="text-slate-600 text-sm">
-              Monthly revenue is estimated as active subscribers × $19.99. Stripe revenue reporting can be added later for exact MRR.
-            </p>
-          </div>
-
-          <div className="rounded-2xl bg-teal-50 p-4 border border-teal-100">
-            <p className="font-black text-teal-700 mb-1">Daily Engagement</p>
-            <p className="text-slate-600 text-sm">
-              Check-ins, food logs, and community posts help show whether users are actively using the platform.
-            </p>
-          </div>
-        </div>
-
-        {stats.generatedAt && (
-          <p className="text-xs text-slate-500 mt-5">
-            Last updated: {new Date(stats.generatedAt).toLocaleString()}
-          </p>
-        )}
-      </Card>
-    </motion.div>
-  );
-}
 
 function AuthScreen({
   session,
@@ -1941,7 +1789,7 @@ function Coach({ messages, input, setInput, send }) {
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
       <Card className="p-4 md:p-6">
         <h2 className="text-3xl font-black mb-1">AI Wellness Coach</h2>
-        <p className="text-slate-500 mb-5">Ask for motivation, stress support, fitness ideas, or nutrition help. The coach can use your recent check-ins, food logs, sleep trends, and exercise ratings for context.</p>
+        <p className="text-slate-500 mb-5">Ask for motivation, stress support, fitness ideas, or nutrition help.</p>
 
         <div className="h-[420px] overflow-y-auto rounded-2xl bg-slate-50 p-4 space-y-3 mb-4">
           {messages.map((m, i) => (
