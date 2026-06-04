@@ -376,6 +376,63 @@ function App() {
     }
   }
 
+  async function loadCommunityPosts() {
+    const { data: postsData, error: postsError } = await supabase
+      .from("community_posts")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(50);
+
+    if (postsError) {
+      console.error("Error loading community posts:", postsError);
+      return;
+    }
+
+    const postsWithReplies = await Promise.all(
+      (postsData || []).map(async (post) => {
+        const { data: repliesData, error: repliesError } = await supabase
+          .from("community_replies")
+          .select("*")
+          .eq("post_id", post.id)
+          .order("created_at", { ascending: true });
+
+        if (repliesError) {
+          console.error("Error loading replies:", repliesError);
+        }
+
+        return {
+          id: post.id,
+          user_id: post.user_id,
+          name: post.name || "User",
+          topic: post.topic || "Mental Health",
+          text: post.text || "",
+          likes: post.likes || 0,
+          liked: false,
+          shares: post.shares || 0,
+          replies: (repliesData || []).map((reply) => ({
+            id: reply.id,
+            name: reply.name || "User",
+            text: reply.text || "",
+            time: new Date(reply.created_at).toLocaleDateString("en-US", {
+              weekday: "short",
+              month: "short",
+              day: "numeric",
+            }),
+          })),
+          time: new Date(post.created_at).toLocaleDateString("en-US", {
+            weekday: "short",
+            month: "short",
+            day: "numeric",
+          }),
+        };
+      })
+    );
+
+    if (postsWithReplies.length > 0) {
+      setPosts(postsWithReplies);
+    }
+  }
+
   useEffect(() => {
     async function loadSession() {
       const { data } = await supabase.auth.getSession();
@@ -383,6 +440,7 @@ function App() {
       await loadProfile(data.session);
       await loadCheckins(data.session);
       await loadFoodLogs(data.session);
+      await loadCommunityPosts();
     }
 
     loadSession();
@@ -394,6 +452,7 @@ function App() {
       await loadProfile(currentSession);
       await loadCheckins(currentSession);
       await loadFoodLogs(currentSession);
+      await loadCommunityPosts();
     });
 
     return () => subscription.unsubscribe();
@@ -809,7 +868,7 @@ function App() {
               />
             )}
             {screen === "coach" && HAS_ACCESS && <Coach messages={messages} input={input} setInput={setInput} send={send} />}
-            {screen === "community" && HAS_ACCESS && <Community posts={posts} setPosts={setPosts} />}
+            {screen === "community" && HAS_ACCESS && <Community posts={posts} setPosts={setPosts} session={session} loadCommunityPosts={loadCommunityPosts} />}
             {screen === "pricing" && <Pricing subscribed={subscribed} setSubscribed={setSubscribed} startCheckout={startCheckout} session={session} />}
             {screen === "support" && <Support />}
 
@@ -1816,47 +1875,77 @@ function Pricing({ subscribed, setSubscribed, startCheckout, session }) {
   );
 }
 
-function Community({ posts, setPosts }) {
+function Community({ posts, setPosts, session, loadCommunityPosts }) {
   const [postText, setPostText] = useState("");
   const [topic, setTopic] = useState("Mental Health");
   const [replyText, setReplyText] = useState({});
   const [openReplies, setOpenReplies] = useState({});
   const [shareNotice, setShareNotice] = useState("");
 
-  function addPost() {
+  async function addPost() {
     if (!postText.trim()) return;
 
-    setPosts((prev) => [
-      {
-        name: "You",
+    const newPost = {
+      name: session?.user?.email?.split("@")[0] || "You",
+      topic,
+      text: postText.trim(),
+      likes: 0,
+      liked: false,
+      shares: 0,
+      replies: [],
+      time: "Just now",
+    };
+
+    setPosts((prev) => [newPost, ...prev]);
+
+    if (session?.user?.id) {
+      const { error } = await supabase.from("community_posts").insert({
+        user_id: session.user.id,
+        name: session.user.email?.split("@")[0] || "User",
         topic,
         text: postText.trim(),
         likes: 0,
-        liked: false,
         shares: 0,
-        replies: [],
-        time: "Just now",
-      },
-      ...prev,
-    ]);
+      });
+
+      if (error) {
+        console.error("Error saving community post:", error);
+        alert("Post showed on screen, but did not save to Supabase.");
+      } else {
+        await loadCommunityPosts();
+      }
+    }
 
     setPostText("");
   }
 
-  function toggleEncourage(index) {
+  async function toggleEncourage(index) {
+    const post = posts[index];
+    const newLiked = !post.liked;
+    const newLikes = newLiked ? (post.likes || 0) + 1 : Math.max((post.likes || 0) - 1, 0);
+
     setPosts((prev) =>
-      prev.map((post, i) =>
+      prev.map((item, i) =>
         i === index
           ? {
-              ...post,
-              liked: !post.liked,
-              likes: post.liked
-                ? Math.max((post.likes || 0) - 1, 0)
-                : (post.likes || 0) + 1,
+              ...item,
+              liked: newLiked,
+              likes: newLikes,
             }
-          : post
+          : item
       )
     );
+
+    if (post.id) {
+      const { error } = await supabase
+        .from("community_posts")
+        .update({ likes: newLikes })
+        .eq("id", post.id);
+
+      if (error) {
+        console.error("Error updating encourage:", error);
+      }
+    }
   }
 
   function toggleReplies(index) {
@@ -1866,28 +1955,45 @@ function Community({ posts, setPosts }) {
     }));
   }
 
-  function addReply(index) {
+  async function addReply(index) {
     const text = replyText[index];
 
     if (!text || !text.trim()) return;
 
+    const post = posts[index];
+
+    const newReply = {
+      name: session?.user?.email?.split("@")[0] || "You",
+      text: text.trim(),
+      time: "Just now",
+    };
+
     setPosts((prev) =>
-      prev.map((post, i) =>
+      prev.map((item, i) =>
         i === index
           ? {
-              ...post,
-              replies: [
-                ...(Array.isArray(post.replies) ? post.replies : []),
-                {
-                  name: "You",
-                  text: text.trim(),
-                  time: "Just now",
-                },
-              ],
+              ...item,
+              replies: [...(Array.isArray(item.replies) ? item.replies : []), newReply],
             }
-          : post
+          : item
       )
     );
+
+    if (session?.user?.id && post.id) {
+      const { error } = await supabase.from("community_replies").insert({
+        post_id: post.id,
+        user_id: session.user.id,
+        name: session.user.email?.split("@")[0] || "User",
+        text: text.trim(),
+      });
+
+      if (error) {
+        console.error("Error saving reply:", error);
+        alert("Reply showed on screen, but did not save to Supabase.");
+      } else {
+        await loadCommunityPosts();
+      }
+    }
 
     setReplyText((prev) => ({
       ...prev,
@@ -1902,6 +2008,7 @@ function Community({ posts, setPosts }) {
 
   async function sharePost(index) {
     const post = posts[index];
+    const newShares = (post.shares || 0) + 1;
     const shareText = `Vitamind Community Post from ${post.name}: ${post.text}`;
 
     setPosts((prev) =>
@@ -1909,11 +2016,22 @@ function Community({ posts, setPosts }) {
         i === index
           ? {
               ...item,
-              shares: (item.shares || 0) + 1,
+              shares: newShares,
             }
           : item
       )
     );
+
+    if (post.id) {
+      const { error } = await supabase
+        .from("community_posts")
+        .update({ shares: newShares })
+        .eq("id", post.id);
+
+      if (error) {
+        console.error("Error updating shares:", error);
+      }
+    }
 
     try {
       if (navigator.share) {
@@ -2002,11 +2120,11 @@ function Community({ posts, setPosts }) {
             const repliesArray = Array.isArray(post.replies) ? post.replies : [];
 
             return (
-              <Card key={`${post.name}-${i}`} className="p-5 rounded-3xl">
+              <Card key={`${post.id || post.name}-${i}`} className="p-5 rounded-3xl">
                 <div className="flex justify-between gap-3 mb-2">
                   <div className="flex items-center gap-3">
                     <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white font-black">
-                      {post.name[0]}
+                      {post.name?.[0] || "U"}
                     </div>
                     <div>
                       <p className="font-black">{post.name}</p>
@@ -2048,7 +2166,7 @@ function Community({ posts, setPosts }) {
                 {openReplies[i] && (
                   <div className="mt-4 space-y-3">
                     {repliesArray.map((reply, replyIndex) => (
-                      <div key={`${reply.name}-${replyIndex}`} className="rounded-2xl bg-blue-50 p-3">
+                      <div key={`${reply.id || reply.name}-${replyIndex}`} className="rounded-2xl bg-blue-50 p-3">
                         <p className="font-bold text-sm">{reply.name}</p>
                         <p className="text-slate-700 text-sm">{reply.text}</p>
                         <p className="text-xs text-slate-400 mt-1">{reply.time}</p>
