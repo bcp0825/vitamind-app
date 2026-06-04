@@ -303,11 +303,52 @@ function App() {
     setSubscriptionStatus(data.subscription_status || "inactive");
   }
 
+  async function loadCheckins(currentSession) {
+    if (!currentSession?.user?.id) return;
+
+    const { data, error } = await supabase
+      .from("checkins")
+      .select("*")
+      .eq("user_id", currentSession.user.id)
+      .order("created_at", { ascending: false })
+      .limit(30);
+
+    if (error) {
+      console.error("Error loading check-ins:", error);
+      return;
+    }
+
+    if (data && data.length > 0) {
+      const formatted = data.map((item) => ({
+        date: new Date(item.created_at).toLocaleDateString("en-US", {
+          weekday: "short",
+          month: "short",
+          day: "numeric",
+        }),
+        depression: item.depression ?? 0,
+        anxiety: item.anxiety ?? 0,
+        stress: item.stress ?? 0,
+        ptsd: item.ptsd ?? 0,
+        traumaStress: item.trauma_stress ?? 0,
+        motivation: item.motivation ?? 0,
+        inattention: item.inattention ?? 0,
+        impulsivity: item.impulsivity ?? 0,
+        hyperactivity: item.hyperactivity ?? 0,
+        energy: item.energy ?? 0,
+        sleep: item.sleep ?? 0,
+        exercise: item.exercise ?? 0,
+      }));
+
+      setHistory(formatted);
+    }
+  }
+
   useEffect(() => {
     async function loadSession() {
       const { data } = await supabase.auth.getSession();
       setSession(data.session);
       await loadProfile(data.session);
+      await loadCheckins(data.session);
     }
 
     loadSession();
@@ -317,6 +358,7 @@ function App() {
     } = supabase.auth.onAuthStateChange(async (_event, currentSession) => {
       setSession(currentSession);
       await loadProfile(currentSession);
+      await loadCheckins(currentSession);
     });
 
     return () => subscription.unsubscribe();
@@ -415,7 +457,7 @@ function App() {
     }
   }
 
-  function saveCheckin() {
+  async function saveCheckin() {
     const today = new Date().toLocaleDateString("en-US", {
       weekday: "short",
       month: "short",
@@ -438,7 +480,33 @@ function App() {
       exercise,
     };
 
-    setHistory((prev) => [entry, ...prev.filter((item) => item.date !== today)]);
+    setHistory((prev) => [entry, ...prev]);
+
+    if (session?.user?.id) {
+      const { error } = await supabase.from("checkins").insert({
+        user_id: session.user.id,
+        depression,
+        anxiety,
+        stress,
+        ptsd,
+        trauma_stress: traumaStress,
+        motivation,
+        inattention,
+        impulsivity,
+        hyperactivity,
+        energy,
+        sleep,
+        exercise,
+      });
+
+      if (error) {
+        console.error("Error saving check-in:", error);
+        alert("Check-in saved on screen, but it did not save to Supabase.");
+      } else {
+        await loadCheckins(session);
+      }
+    }
+
     setScreen("home");
   }
 
