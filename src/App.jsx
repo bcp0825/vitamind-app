@@ -790,10 +790,7 @@ function App() {
               ["community", Users, "Community"],
               ["pricing", CreditCard, "Subscription"],
               ["support", Mail, "Support"],
-              ["privacy", ShieldCheck, "Privacy"],
-              ["terms", ShieldCheck, "Terms"],
-              ["disclaimer", ShieldCheck, "Disclaimer"],
-              ["subscriptionPolicy", CreditCard, "Policy"],
+              ["legal", ShieldCheck, "Legal"],
             ].map(([key, Icon, label]) => (
               <button
                 key={key}
@@ -906,6 +903,7 @@ function App() {
             {screen === "coach" && HAS_ACCESS && <Coach messages={messages} input={input} setInput={setInput} send={send} />}
             {screen === "community" && HAS_ACCESS && <Community posts={posts} setPosts={setPosts} session={session} loadCommunityPosts={loadCommunityPosts} />}
             {screen === "pricing" && <Pricing subscribed={subscribed} setSubscribed={setSubscribed} startCheckout={startCheckout} manageSubscription={manageSubscription} session={session} subscriptionStatus={subscriptionStatus} />}
+            {screen === "legal" && <LegalHub setScreen={setScreen} />}
             {screen === "privacy" && <PrivacyPolicy />}
             {screen === "terms" && <TermsOfService />}
             {screen === "disclaimer" && <MedicalDisclaimer />}
@@ -916,6 +914,7 @@ function App() {
               screen !== "website" &&
               screen !== "pricing" &&
               screen !== "auth" &&
+              screen !== "legal" &&
               screen !== "privacy" &&
               screen !== "terms" &&
               screen !== "disclaimer" &&
@@ -2255,6 +2254,80 @@ function Support() {
 
 
 
+
+function LegalHub({ setScreen }) {
+  const legalPages = [
+    {
+      title: "Privacy Policy",
+      description: "How Vitamind collects, uses, protects, and manages user information.",
+      screen: "privacy",
+      icon: ShieldCheck,
+    },
+    {
+      title: "Terms of Service",
+      description: "Rules, account responsibilities, acceptable use, and community standards.",
+      screen: "terms",
+      icon: ShieldCheck,
+    },
+    {
+      title: "Medical Disclaimer",
+      description: "Important information explaining that Vitamind is not medical care or crisis support.",
+      screen: "disclaimer",
+      icon: Brain,
+    },
+    {
+      title: "Subscription Policy",
+      description: "Free trial, billing, cancellation, refunds, and subscription access information.",
+      screen: "subscriptionPolicy",
+      icon: CreditCard,
+    },
+  ];
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
+      <Card className="p-8 bg-gradient-to-r from-blue-700 via-sky-500 to-teal-400 text-white border-none shadow-xl shadow-blue-100">
+        <p className="text-blue-100 font-semibold mb-2">Vitamind Legal Center</p>
+        <h2 className="text-5xl font-black mb-4">Legal Information</h2>
+        <p className="text-blue-50 text-lg max-w-3xl">
+          Review Vitamind's policies, terms, subscription information, and wellness disclaimer in one place.
+        </p>
+      </Card>
+
+      <div className="grid md:grid-cols-2 gap-4">
+        {legalPages.map((page) => {
+          const Icon = page.icon;
+
+          return (
+            <Card key={page.screen} className="p-6 hover:shadow-md transition">
+              <div className="h-12 w-12 rounded-2xl bg-blue-50 flex items-center justify-center mb-4">
+                <Icon className="text-blue-600" />
+              </div>
+
+              <h3 className="text-2xl font-black mb-2">{page.title}</h3>
+              <p className="text-slate-600 mb-5">{page.description}</p>
+
+              <Button onClick={() => setScreen(page.screen)} className="w-full">
+                View {page.title}
+              </Button>
+            </Card>
+          );
+        })}
+      </div>
+
+      <Card className="p-6 text-center border-2 border-blue-200">
+        <h3 className="text-2xl font-black mb-2">Need Help?</h3>
+        <p className="text-slate-600 mb-4">
+          Contact Vitamind support for questions about accounts, subscriptions, billing, or policies.
+        </p>
+        <Button onClick={() => setScreen("support")} variant="secondary">
+          Contact Support
+        </Button>
+      </Card>
+    </motion.div>
+  );
+}
+
+
 function LegalPage({ title, subtitle, children }) {
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
@@ -2463,10 +2536,7 @@ function Footer({ setScreen }) {
   return (
     <footer className="mt-8 rounded-3xl bg-white border border-blue-100 p-5 shadow-sm text-center">
       <div className="flex flex-wrap justify-center gap-4 text-sm font-semibold text-blue-700 mb-3">
-        <button onClick={() => setScreen("privacy")} className="hover:underline">Privacy Policy</button>
-        <button onClick={() => setScreen("terms")} className="hover:underline">Terms of Service</button>
-        <button onClick={() => setScreen("disclaimer")} className="hover:underline">Medical Disclaimer</button>
-        <button onClick={() => setScreen("subscriptionPolicy")} className="hover:underline">Subscription Policy</button>
+        <button onClick={() => setScreen("legal")} className="hover:underline">Legal Center</button>
         <button onClick={() => setScreen("support")} className="hover:underline">Contact Support</button>
       </div>
 
