@@ -1490,6 +1490,60 @@ function Insights({ history, foodLog, setScreen }) {
         ) / 10
       : 0;
 
+  const percentChange = (key, lowerIsBetter = false) => {
+    if (!latest[key] || !oldest[key] || recent.length < 2) return null;
+
+    const start = Number(oldest[key]);
+    const end = Number(latest[key]);
+
+    if (!start || Number.isNaN(start) || Number.isNaN(end)) return null;
+
+    const rawChange = ((end - start) / start) * 100;
+    const improved = lowerIsBetter ? rawChange < 0 : rawChange > 0;
+
+    return {
+      percent: Math.round(Math.abs(rawChange)),
+      improved,
+      direction: rawChange > 0 ? "increased" : rawChange < 0 ? "decreased" : "stayed stable",
+    };
+  };
+
+  const compareAverage = (items, key, filterKey, threshold, comparison = "gte") => {
+    const filtered = items.filter((item) => {
+      const filterValue = Number(item[filterKey]);
+      return comparison === "gte" ? filterValue >= threshold : filterValue <= threshold;
+    });
+
+    if (!filtered.length) return null;
+
+    const values = filtered
+      .map((item) => Number(item[key]))
+      .filter((value) => !Number.isNaN(value));
+
+    if (!values.length) return null;
+
+    return Math.round((values.reduce((sum, value) => sum + value, 0) / values.length) * 10) / 10;
+  };
+
+  const anxietyChange = percentChange("anxiety", true);
+  const depressionChange = percentChange("depression", true);
+  const stressChange = percentChange("stress", true);
+  const sleepChange = percentChange("sleep", false);
+  const exerciseChange = percentChange("exercise", false);
+
+  const avgAnxietyHighSleep = compareAverage(recent, "anxiety", "sleep", 7, "gte");
+  const avgAnxietyLowSleep = compareAverage(recent, "anxiety", "sleep", 6, "lte");
+  const avgStressHighExercise = compareAverage(recent, "stress", "exercise", 6, "gte");
+  const avgStressLowExercise = compareAverage(recent, "stress", "exercise", 4, "lte");
+
+  const foodMoodCounts = safeFoodLog.reduce((acc, item) => {
+    const mood = item.mood || "Neutral";
+    acc[mood] = (acc[mood] || 0) + 1;
+    return acc;
+  }, {});
+
+  const topFoodMood = Object.entries(foodMoodCounts).sort((a, b) => b[1] - a[1])[0];
+
   const sleepInsight =
     avg("sleep") >= 7
       ? "Your recent sleep average is in a strong range. Keep protecting your sleep routine."
@@ -1510,6 +1564,64 @@ function Insights({ history, foodLog, setScreen }) {
       : avg("stress") > 0
       ? "Your recent stress and anxiety averages are not in the highest range. Keep tracking patterns."
       : "Add more check-ins to generate stress insights.";
+
+  const trendCards = [
+    {
+      title: "Anxiety Trend",
+      text: anxietyChange
+        ? `Your anxiety ${anxietyChange.direction} by about ${anxietyChange.percent}% across your recent check-ins.`
+        : "Add more check-ins to calculate anxiety trend changes.",
+      status: anxietyChange?.improved ? "Improving" : anxietyChange ? "Watch" : "Needs Data",
+    },
+    {
+      title: "Mood Trend",
+      text: depressionChange
+        ? `Your depression rating ${depressionChange.direction} by about ${depressionChange.percent}% across your recent check-ins.`
+        : "Add more check-ins to calculate mood trend changes.",
+      status: depressionChange?.improved ? "Improving" : depressionChange ? "Watch" : "Needs Data",
+    },
+    {
+      title: "Stress Trend",
+      text: stressChange
+        ? `Your stress ${stressChange.direction} by about ${stressChange.percent}% across your recent check-ins.`
+        : "Add more check-ins to calculate stress trend changes.",
+      status: stressChange?.improved ? "Improving" : stressChange ? "Watch" : "Needs Data",
+    },
+    {
+      title: "Sleep Trend",
+      text: sleepChange
+        ? `Your sleep ${sleepChange.direction} by about ${sleepChange.percent}% across your recent check-ins.`
+        : "Add more check-ins to calculate sleep trend changes.",
+      status: sleepChange?.improved ? "Improving" : sleepChange ? "Watch" : "Needs Data",
+    },
+    {
+      title: "Exercise Trend",
+      text: exerciseChange
+        ? `Your exercise rating ${exerciseChange.direction} by about ${exerciseChange.percent}% across your recent check-ins.`
+        : "Add more check-ins to calculate exercise trend changes.",
+      status: exerciseChange?.improved ? "Improving" : exerciseChange ? "Watch" : "Needs Data",
+    },
+    {
+      title: "Food Energy Pattern",
+      text:
+        averageFoodEnergy > 0
+          ? `Your average energy after meals is ${averageFoodEnergy}/10. High-energy foods are being tracked for better nutrition suggestions.`
+          : "Add food logs to calculate food and energy patterns.",
+      status: averageFoodEnergy >= 7 ? "Strong" : averageFoodEnergy > 0 ? "Building" : "Needs Data",
+    },
+  ];
+
+  const correlationNotes = [
+    avgAnxietyHighSleep !== null && avgAnxietyLowSleep !== null
+      ? `On higher-sleep days, your average anxiety was ${avgAnxietyHighSleep}/10 compared with ${avgAnxietyLowSleep}/10 on lower-sleep days.`
+      : "Add more sleep ratings to compare sleep and anxiety patterns.",
+    avgStressHighExercise !== null && avgStressLowExercise !== null
+      ? `On higher-exercise days, your average stress was ${avgStressHighExercise}/10 compared with ${avgStressLowExercise}/10 on lower-exercise days.`
+      : "Add more exercise ratings to compare exercise and stress patterns.",
+    topFoodMood
+      ? `Your most common mood after eating is ${topFoodMood[0]}, appearing in ${topFoodMood[1]} food log entries.`
+      : "Add food logs to identify your most common mood after eating.",
+  ];
 
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
@@ -1536,6 +1648,48 @@ function Insights({ history, foodLog, setScreen }) {
         <Metric icon={Moon} label="Avg Sleep" value={`${avg("sleep")} hrs`} color="text-blue-600" bg="bg-blue-50" />
         <Metric icon={Activity} label="Avg Exercise" value={`${avg("exercise")}/10`} color="text-teal-600" bg="bg-teal-50" />
       </div>
+
+      <Card className="p-6 border-2 border-blue-200 bg-gradient-to-br from-white to-blue-50">
+        <div className="flex flex-wrap items-start justify-between gap-3 mb-5">
+          <div>
+            <p className="text-blue-600 font-black uppercase text-sm mb-1">AI Trend Intelligence</p>
+            <h3 className="text-3xl font-black">Automatic Pattern Detection</h3>
+          </div>
+
+          <Button onClick={() => setScreen("coach")} variant="secondary">
+            Ask AI About Trends
+          </Button>
+        </div>
+
+        <div className="grid md:grid-cols-3 gap-4">
+          {trendCards.map((card, i) => (
+            <div key={i} className="rounded-2xl bg-white border border-blue-100 p-4 shadow-sm">
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <h4 className="font-black text-slate-900">{card.title}</h4>
+                <span className={`text-xs font-black rounded-full px-3 py-1 ${
+                  card.status === "Improving"
+                    ? "bg-green-100 text-green-700"
+                    : card.status === "Watch"
+                    ? "bg-orange-100 text-orange-700"
+                    : "bg-slate-100 text-slate-600"
+                }`}>
+                  {card.status}
+                </span>
+              </div>
+              <p className="text-sm text-slate-600">{card.text}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-5 rounded-2xl bg-blue-600 text-white p-5">
+          <h4 className="text-xl font-black mb-3">Pattern Connections</h4>
+          <div className="space-y-2 text-blue-50">
+            {correlationNotes.map((note, i) => (
+              <p key={i}>• {note}</p>
+            ))}
+          </div>
+        </div>
+      </Card>
 
       <div className="grid md:grid-cols-2 gap-4">
         <Card className="p-6">
@@ -1631,7 +1785,7 @@ function Insights({ history, foodLog, setScreen }) {
       <Card className="p-6 text-center border-2 border-blue-200">
         <h3 className="text-2xl font-black mb-3">Ask AI About These Insights</h3>
         <p className="text-slate-600 mb-5">
-          Your AI Coach can now use recent check-ins and food logs to explain patterns and suggest practical next steps.
+          Your AI Coach can now use recent check-ins, food logs, trend changes, sleep patterns, and exercise ratings to explain patterns and suggest practical next steps.
         </p>
         <Button onClick={() => setScreen("coach")}>
           Ask AI Coach
