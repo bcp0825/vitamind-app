@@ -1,0 +1,8 @@
+{
+  "appId": "com.vitamind.app",
+  "appName": "Vitamind",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  }
+}
