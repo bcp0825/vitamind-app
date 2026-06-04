@@ -552,7 +552,7 @@ function App() {
   }
 
   async function manageSubscription() {
-    if (!session) {
+    if (!session?.user?.email) {
       setScreen("auth");
       return;
     }
@@ -570,13 +570,18 @@ function App() {
 
       const data = await response.json();
 
+      if (!response.ok) {
+        alert(data.error || "Unable to open billing portal.");
+        return;
+      }
+
       if (data.url) {
         window.location.href = data.url;
       } else {
-        alert(data.error || "Unable to open billing portal.");
+        alert("Stripe did not return a billing portal URL.");
       }
     } catch (error) {
-      alert("Billing portal connection failed.");
+      alert("Billing portal connection failed: " + error.message);
     }
   }
 
@@ -826,6 +831,7 @@ function App() {
                 handleLogout={handleLogout}
                 subscriptionStatus={subscriptionStatus}
                 startCheckout={startCheckout}
+                manageSubscription={manageSubscription}
               />
             )}
             {screen === "home" && HAS_ACCESS && (
