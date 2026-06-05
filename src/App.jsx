@@ -777,7 +777,7 @@ function App() {
         <div className="grid md:grid-cols-4 gap-5">
           <nav className="bg-white rounded-3xl border border-blue-100 p-3 shadow-sm h-fit md:col-span-1">
             {[
-              ["website", Sparkles, "Website"],
+              ["website", Sparkles, "Home"],
               ["auth", Users, session ? "Account" : "Login"],
               ["home", Home, "Dashboard"],
               ["checkin", Smile, "Check-In"],
