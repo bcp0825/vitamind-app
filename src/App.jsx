@@ -172,6 +172,7 @@ function App() {
   const [authMode, setAuthMode] = useState("login");
   const [authEmail, setAuthEmail] = useState("");
   const [authPassword, setAuthPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
   const [authMessage, setAuthMessage] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
   const [depression, setDepression] = useState(4);
@@ -515,6 +516,13 @@ function App() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_event, currentSession) => {
       setSession(currentSession);
+
+      if (_event === "PASSWORD_RECOVERY") {
+        setScreen("auth");
+        setAuthMode("updatePassword");
+        setAuthMessage("Enter your new password below.");
+      }
+
       await loadProfile(currentSession);
       await loadAdminStats(currentSession);
       await loadCheckins(currentSession);
@@ -524,6 +532,56 @@ function App() {
 
     return () => subscription.unsubscribe();
   }, []);
+
+
+  async function handlePasswordResetRequest() {
+    setAuthMessage("");
+
+    if (!authEmail) {
+      setAuthMessage("Enter your email address first, then click Forgot Password again.");
+      return;
+    }
+
+    setAuthLoading(true);
+
+    const { error } = await supabase.auth.resetPasswordForEmail(authEmail, {
+      redirectTo: "https://www.the-vitamind.com",
+    });
+
+    if (error) {
+      setAuthMessage(error.message);
+    } else {
+      setAuthMessage("Password reset email sent. Check your inbox and follow the link.");
+    }
+
+    setAuthLoading(false);
+  }
+
+  async function handleUpdatePassword() {
+    setAuthMessage("");
+
+    if (!newPassword || newPassword.length < 6) {
+      setAuthMessage("Enter a new password with at least 6 characters.");
+      return;
+    }
+
+    setAuthLoading(true);
+
+    const { error } = await supabase.auth.updateUser({
+      password: newPassword,
+    });
+
+    if (error) {
+      setAuthMessage(error.message);
+    } else {
+      setAuthMessage("Password updated successfully. You can now log in.");
+      setNewPassword("");
+      setAuthMode("login");
+      setScreen("auth");
+    }
+
+    setAuthLoading(false);
+  }
 
   async function handleAuth() {
     setAuthMessage("");
@@ -890,6 +948,8 @@ function App() {
                 setAuthEmail={setAuthEmail}
                 authPassword={authPassword}
                 setAuthPassword={setAuthPassword}
+                newPassword={newPassword}
+                setNewPassword={setNewPassword}
                 authMessage={authMessage}
                 authLoading={authLoading}
                 handleAuth={handleAuth}
@@ -897,6 +957,8 @@ function App() {
                 subscriptionStatus={subscriptionStatus}
                 startCheckout={startCheckout}
                 manageSubscription={manageSubscription}
+                handlePasswordResetRequest={handlePasswordResetRequest}
+                handleUpdatePassword={handleUpdatePassword}
               />
             )}
             {screen === "admin" && isAdmin && (
@@ -1124,6 +1186,8 @@ function AuthScreen({
   setAuthEmail,
   authPassword,
   setAuthPassword,
+  newPassword,
+  setNewPassword,
   authMessage,
   authLoading,
   handleAuth,
@@ -1131,7 +1195,51 @@ function AuthScreen({
   subscriptionStatus,
   startCheckout,
   manageSubscription,
+  handlePasswordResetRequest,
+  handleUpdatePassword,
 }) {
+  if (authMode === "updatePassword") {
+    return (
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
+        <Card className="p-8 bg-gradient-to-r from-blue-700 via-sky-500 to-teal-400 text-white border-none shadow-xl shadow-blue-100">
+          <p className="text-blue-100 font-semibold mb-2">Reset Password</p>
+          <h2 className="text-5xl font-black mb-4">Create a new password</h2>
+          <p className="text-blue-50 text-lg max-w-3xl">
+            Enter a new password for your Vitamind account.
+          </p>
+        </Card>
+
+        <Card className="p-6 max-w-xl mx-auto">
+          <label className="block font-bold mb-2">New Password</label>
+          <input
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            type="password"
+            placeholder="Enter new password"
+            className="w-full rounded-2xl border border-blue-100 px-4 py-3 outline-none focus:ring-2 focus:ring-blue-200 mb-5"
+          />
+
+          <Button onClick={handleUpdatePassword} className="w-full">
+            {authLoading ? "Updating..." : "Update Password"}
+          </Button>
+
+          <button
+            onClick={() => setAuthMode("login")}
+            className="block mx-auto mt-4 text-sm font-bold text-blue-600 hover:underline"
+          >
+            Back to login
+          </button>
+
+          {authMessage && (
+            <p className="mt-4 text-center text-sm font-semibold text-blue-700">
+              {authMessage}
+            </p>
+          )}
+        </Card>
+      </motion.div>
+    );
+  }
+
   if (session) {
     return (
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
@@ -1170,10 +1278,12 @@ function AuthScreen({
       <Card className="p-8 bg-gradient-to-r from-blue-700 via-sky-500 to-teal-400 text-white border-none shadow-xl shadow-blue-100">
         <p className="text-blue-100 font-semibold mb-2">Vitamind Account</p>
         <h2 className="text-5xl font-black mb-4">
-          {authMode === "signup" ? "Create your account" : "Welcome back"}
+          {authMode === "signup" ? "Create your account" : authMode === "forgot" ? "Reset your password" : "Welcome back"}
         </h2>
         <p className="text-blue-50 text-lg max-w-3xl">
-          Log in to access Vitamind Premium features, save your wellness history, food logs, and AI coaching experience.
+          {authMode === "forgot"
+            ? "Enter your email address and we will send you a password reset link."
+            : "Log in to access Vitamind Premium features, save your wellness history, food logs, and AI coaching experience."}
         </p>
       </Card>
 
@@ -1207,18 +1317,48 @@ function AuthScreen({
           className="w-full rounded-2xl border border-blue-100 px-4 py-3 outline-none focus:ring-2 focus:ring-blue-200 mb-4"
         />
 
-        <label className="block font-bold mb-2">Password</label>
-        <input
-          value={authPassword}
-          onChange={(e) => setAuthPassword(e.target.value)}
-          type="password"
-          placeholder="Enter password"
-          className="w-full rounded-2xl border border-blue-100 px-4 py-3 outline-none focus:ring-2 focus:ring-blue-200 mb-5"
-        />
+        {authMode !== "forgot" && (
+          <>
+            <label className="block font-bold mb-2">Password</label>
+            <input
+              value={authPassword}
+              onChange={(e) => setAuthPassword(e.target.value)}
+              type="password"
+              placeholder="Enter password"
+              className="w-full rounded-2xl border border-blue-100 px-4 py-3 outline-none focus:ring-2 focus:ring-blue-200 mb-3"
+            />
 
-        <Button onClick={handleAuth} className="w-full">
-          {authLoading ? "Please wait..." : authMode === "signup" ? "Create Account" : "Login"}
-        </Button>
+            {authMode === "login" && (
+              <button
+                onClick={() => {
+                  setAuthMode("forgot");
+                }}
+                className="mb-5 text-sm font-bold text-blue-600 hover:underline"
+              >
+                Forgot password?
+              </button>
+            )}
+          </>
+        )}
+
+        {authMode === "forgot" ? (
+          <>
+            <Button onClick={handlePasswordResetRequest} className="w-full">
+              {authLoading ? "Sending..." : "Send Password Reset Email"}
+            </Button>
+
+            <button
+              onClick={() => setAuthMode("login")}
+              className="block mx-auto mt-4 text-sm font-bold text-blue-600 hover:underline"
+            >
+              Back to login
+            </button>
+          </>
+        ) : (
+          <Button onClick={handleAuth} className="w-full">
+            {authLoading ? "Please wait..." : authMode === "signup" ? "Create Account" : "Login"}
+          </Button>
+        )}
 
         {authMessage && (
           <p className="mt-4 text-center text-sm font-semibold text-blue-700">
@@ -1227,7 +1367,7 @@ function AuthScreen({
         )}
 
         <p className="text-xs text-slate-500 mt-5 text-center">
-          Next step: connect this account to saved check-ins, food logs, and Stripe subscription status.
+          Need help? Contact customerservicethevitamind@gmail.com.
         </p>
       </Card>
     </motion.div>
