@@ -2609,6 +2609,71 @@ function Community({ posts, setPosts, session, loadCommunityPosts }) {
   const [replyText, setReplyText] = useState({});
   const [openReplies, setOpenReplies] = useState({});
   const [shareNotice, setShareNotice] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [activeTopic, setActiveTopic] = useState("Feed");
+  const [joinedGroups, setJoinedGroups] = useState([]);
+
+  const topicFilters = ["Feed", "Mental Health", "Fitness", "Nutrition", "Wellness Wins"];
+
+  const trendingTopics = [
+    {
+      tag: "#AnxietySupport",
+      label: "Mental Health",
+      description: "Tools for anxious days",
+      search: "anxiety",
+    },
+    {
+      tag: "#WeightLossJourney",
+      label: "Fitness",
+      description: "Movement and consistency",
+      search: "weight loss",
+    },
+    {
+      tag: "#ADHDTips",
+      label: "Mental Health",
+      description: "Focus, planning, and routines",
+      search: "ADHD",
+    },
+    {
+      tag: "#MoodMeals",
+      label: "Nutrition",
+      description: "Food and mood patterns",
+      search: "meal",
+    },
+  ];
+
+  const suggestedGroups = [
+    {
+      name: "Mindful Weight Loss",
+      topic: "Fitness",
+      members: "4.3k members",
+    },
+    {
+      name: "Anxiety Recovery",
+      topic: "Mental Health",
+      members: "2.1k members",
+    },
+    {
+      name: "Mood-Based Nutrition",
+      topic: "Nutrition",
+      members: "1.4k members",
+    },
+  ];
+
+  const filteredPosts = posts.filter((post) => {
+    const matchesTopic = activeTopic === "Feed" || post.topic === activeTopic;
+    const search = searchTerm.trim().toLowerCase();
+
+    const matchesSearch =
+      !search ||
+      post.text?.toLowerCase().includes(search) ||
+      post.topic?.toLowerCase().includes(search) ||
+      post.name?.toLowerCase().includes(search) ||
+      (Array.isArray(post.replies) &&
+        post.replies.some((reply) => reply.text?.toLowerCase().includes(search)));
+
+    return matchesTopic && matchesSearch;
+  });
 
   async function addPost() {
     if (!postText.trim()) return;
@@ -2645,16 +2710,19 @@ function Community({ posts, setPosts, session, loadCommunityPosts }) {
     }
 
     setPostText("");
+    setActiveTopic("Feed");
   }
 
-  async function toggleEncourage(index) {
-    const post = posts[index];
+  async function toggleEncourage(post) {
+    const originalIndex = posts.findIndex((item) => item.id === post.id || item === post);
+    if (originalIndex === -1) return;
+
     const newLiked = !post.liked;
     const newLikes = newLiked ? (post.likes || 0) + 1 : Math.max((post.likes || 0) - 1, 0);
 
     setPosts((prev) =>
       prev.map((item, i) =>
-        i === index
+        i === originalIndex
           ? {
               ...item,
               liked: newLiked,
@@ -2676,19 +2744,20 @@ function Community({ posts, setPosts, session, loadCommunityPosts }) {
     }
   }
 
-  function toggleReplies(index) {
+  function toggleReplies(postKey) {
     setOpenReplies((prev) => ({
       ...prev,
-      [index]: !prev[index],
+      [postKey]: !prev[postKey],
     }));
   }
 
-  async function addReply(index) {
-    const text = replyText[index];
+  async function addReply(postKey, post) {
+    const text = replyText[postKey];
 
     if (!text || !text.trim()) return;
 
-    const post = posts[index];
+    const originalIndex = posts.findIndex((item) => item.id === post.id || item === post);
+    if (originalIndex === -1) return;
 
     const newReply = {
       name: session?.user?.email?.split("@")[0] || "You",
@@ -2698,7 +2767,7 @@ function Community({ posts, setPosts, session, loadCommunityPosts }) {
 
     setPosts((prev) =>
       prev.map((item, i) =>
-        i === index
+        i === originalIndex
           ? {
               ...item,
               replies: [...(Array.isArray(item.replies) ? item.replies : []), newReply],
@@ -2725,23 +2794,25 @@ function Community({ posts, setPosts, session, loadCommunityPosts }) {
 
     setReplyText((prev) => ({
       ...prev,
-      [index]: "",
+      [postKey]: "",
     }));
 
     setOpenReplies((prev) => ({
       ...prev,
-      [index]: true,
+      [postKey]: true,
     }));
   }
 
-  async function sharePost(index) {
-    const post = posts[index];
+  async function sharePost(post) {
+    const originalIndex = posts.findIndex((item) => item.id === post.id || item === post);
+    if (originalIndex === -1) return;
+
     const newShares = (post.shares || 0) + 1;
     const shareText = `Vitamind Community Post from ${post.name}: ${post.text}`;
 
     setPosts((prev) =>
       prev.map((item, i) =>
-        i === index
+        i === originalIndex
           ? {
               ...item,
               shares: newShares,
@@ -2783,14 +2854,52 @@ function Community({ posts, setPosts, session, loadCommunityPosts }) {
     setTimeout(() => setShareNotice(""), 3000);
   }
 
+  function selectTrendingTopic(trending) {
+    setActiveTopic(trending.label);
+    setSearchTerm(trending.search);
+    setShareNotice(`Showing ${trending.tag} related posts.`);
+    setTimeout(() => setShareNotice(""), 2500);
+  }
+
+  function toggleJoinGroup(groupName) {
+    setJoinedGroups((prev) =>
+      prev.includes(groupName)
+        ? prev.filter((name) => name !== groupName)
+        : [...prev, groupName]
+    );
+  }
+
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
-      <div className="sticky top-0 z-10 bg-white/95 backdrop-blur rounded-3xl border border-blue-100 shadow-sm p-4 flex items-center justify-between">
+      <div className="sticky top-0 z-10 bg-white/95 backdrop-blur rounded-3xl border border-blue-100 shadow-sm p-4 flex items-center justify-between gap-3">
         <Logo compact />
+
         <div className="hidden md:flex items-center gap-3 bg-slate-50 rounded-full px-4 py-2 w-[420px]">
-          <input placeholder="Search Vitamind community" className="bg-transparent outline-none flex-1 text-sm" />
+          <input
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Search posts, topics, replies, or members..."
+            className="bg-transparent outline-none flex-1 text-sm"
+          />
+          {searchTerm && (
+            <button onClick={() => setSearchTerm("")} className="text-xs font-bold text-blue-600">
+              Clear
+            </button>
+          )}
         </div>
-        <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-teal-400 flex items-center justify-center text-white font-black">B</div>
+
+        <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-teal-400 flex items-center justify-center text-white font-black">
+          {session?.user?.email?.[0]?.toUpperCase() || "B"}
+        </div>
+      </div>
+
+      <div className="md:hidden">
+        <input
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          placeholder="Search community..."
+          className="w-full rounded-2xl border border-blue-100 px-4 py-3 outline-none focus:ring-2 focus:ring-blue-200"
+        />
       </div>
 
       {shareNotice && (
@@ -2803,12 +2912,28 @@ function Community({ posts, setPosts, session, loadCommunityPosts }) {
         <div className="space-y-4 lg:col-span-1">
           <Card className="p-5">
             <h3 className="font-black text-lg mb-3">Community</h3>
-            <div className="space-y-3 text-sm font-semibold text-slate-700">
-              <p>👥 Feed</p>
-              <p>🧠 Mental Health</p>
-              <p>💪 Fitness</p>
-              <p>🍎 Nutrition</p>
-              <p>✨ Wellness Wins</p>
+            <div className="space-y-2 text-sm font-semibold text-slate-700">
+              {topicFilters.map((item) => (
+                <button
+                  key={item}
+                  onClick={() => {
+                    setActiveTopic(item);
+                    setSearchTerm("");
+                  }}
+                  className={`w-full text-left rounded-xl px-3 py-2 transition ${
+                    activeTopic === item
+                      ? "bg-blue-600 text-white"
+                      : "hover:bg-blue-50"
+                  }`}
+                >
+                  {item === "Feed" && "👥 "}
+                  {item === "Mental Health" && "🧠 "}
+                  {item === "Fitness" && "💪 "}
+                  {item === "Nutrition" && "🍎 "}
+                  {item === "Wellness Wins" && "✨ "}
+                  {item}
+                </button>
+              ))}
             </div>
           </Card>
 
@@ -2823,7 +2948,9 @@ function Community({ posts, setPosts, session, loadCommunityPosts }) {
         <div className="space-y-4 lg:col-span-2">
           <Card className="p-5">
             <div className="flex items-start gap-3">
-              <div className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 to-teal-400 flex items-center justify-center text-white font-black">B</div>
+              <div className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 to-teal-400 flex items-center justify-center text-white font-black">
+                {session?.user?.email?.[0]?.toUpperCase() || "B"}
+              </div>
               <div className="flex-1">
                 <input
                   value={postText}
@@ -2844,11 +2971,41 @@ function Community({ posts, setPosts, session, loadCommunityPosts }) {
             </div>
           </Card>
 
-          {posts.map((post, i) => {
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm font-semibold text-slate-500">
+              Showing {filteredPosts.length} post{filteredPosts.length === 1 ? "" : "s"}
+              {activeTopic !== "Feed" ? ` in ${activeTopic}` : ""}
+              {searchTerm ? ` matching "${searchTerm}"` : ""}
+            </p>
+
+            {(activeTopic !== "Feed" || searchTerm) && (
+              <button
+                onClick={() => {
+                  setActiveTopic("Feed");
+                  setSearchTerm("");
+                }}
+                className="text-sm font-bold text-blue-600 hover:underline"
+              >
+                Reset feed
+              </button>
+            )}
+          </div>
+
+          {filteredPosts.length === 0 && (
+            <Card className="p-6 text-center">
+              <h3 className="text-2xl font-black mb-2">No posts found</h3>
+              <p className="text-slate-600">
+                Try a different search, choose another topic, or create the first post.
+              </p>
+            </Card>
+          )}
+
+          {filteredPosts.map((post, i) => {
             const repliesArray = Array.isArray(post.replies) ? post.replies : [];
+            const postKey = post.id || `${post.name}-${post.time}-${i}`;
 
             return (
-              <Card key={`${post.id || post.name}-${i}`} className="p-5 rounded-3xl">
+              <Card key={postKey} className="p-5 rounded-3xl">
                 <div className="flex justify-between gap-3 mb-2">
                   <div className="flex items-center gap-3">
                     <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white font-black">
@@ -2870,28 +3027,28 @@ function Community({ posts, setPosts, session, loadCommunityPosts }) {
 
                 <div className="mt-5 flex items-center justify-between border-t border-slate-100 pt-4">
                   <button
-                    onClick={() => toggleEncourage(i)}
+                    onClick={() => toggleEncourage(post)}
                     className={`font-semibold ${post.liked ? "text-blue-600" : "text-slate-600 hover:text-blue-600"}`}
                   >
                     👍 {post.liked ? "Encouraged" : "Encourage"}
                   </button>
 
                   <button
-                    onClick={() => toggleReplies(i)}
+                    onClick={() => toggleReplies(postKey)}
                     className="text-slate-600 hover:text-blue-600 font-semibold"
                   >
                     💬 Reply ({repliesArray.length})
                   </button>
 
                   <button
-                    onClick={() => sharePost(i)}
+                    onClick={() => sharePost(post)}
                     className="text-slate-600 hover:text-blue-600 font-semibold"
                   >
                     ↗ Share ({post.shares || 0})
                   </button>
                 </div>
 
-                {openReplies[i] && (
+                {openReplies[postKey] && (
                   <div className="mt-4 space-y-3">
                     {repliesArray.map((reply, replyIndex) => (
                       <div key={`${reply.id || reply.name}-${replyIndex}`} className="rounded-2xl bg-blue-50 p-3">
@@ -2903,21 +3060,21 @@ function Community({ posts, setPosts, session, loadCommunityPosts }) {
 
                     <div className="flex gap-2">
                       <input
-                        value={replyText[i] || ""}
+                        value={replyText[postKey] || ""}
                         onChange={(e) =>
                           setReplyText((prev) => ({
                             ...prev,
-                            [i]: e.target.value,
+                            [postKey]: e.target.value,
                           }))
                         }
                         onKeyDown={(e) => {
-                          if (e.key === "Enter") addReply(i);
+                          if (e.key === "Enter") addReply(postKey, post);
                         }}
                         placeholder="Write a supportive reply..."
                         className="flex-1 rounded-2xl border border-blue-100 px-4 py-3 outline-none focus:ring-2 focus:ring-blue-200"
                       />
 
-                      <Button onClick={() => addReply(i)}>Reply</Button>
+                      <Button onClick={() => addReply(postKey, post)}>Reply</Button>
                     </div>
                   </div>
                 )}
@@ -2930,43 +3087,42 @@ function Community({ posts, setPosts, session, loadCommunityPosts }) {
           <Card className="p-5">
             <h3 className="font-black text-lg mb-4">Trending Topics</h3>
             <div className="space-y-3 text-sm">
-              <div className="rounded-2xl bg-blue-50 p-3">
-                <p className="font-black text-sky-700">#AnxietySupport</p>
-                <p className="text-slate-500">1.2k discussions</p>
-              </div>
-              <div className="rounded-2xl bg-blue-50 p-3">
-                <p className="font-black text-teal-700">#WeightLossJourney</p>
-                <p className="text-slate-500">840 discussions</p>
-              </div>
-              <div className="rounded-2xl bg-blue-50 p-3">
-                <p className="font-black text-indigo-700">#ADHDTips</p>
-                <p className="text-slate-500">610 discussions</p>
-              </div>
+              {trendingTopics.map((item) => (
+                <button
+                  key={item.tag}
+                  onClick={() => selectTrendingTopic(item)}
+                  className="w-full text-left rounded-2xl bg-blue-50 p-3 hover:bg-blue-100 transition"
+                >
+                  <p className="font-black text-sky-700">{item.tag}</p>
+                  <p className="text-slate-500">{item.description}</p>
+                </button>
+              ))}
             </div>
           </Card>
 
           <Card className="p-5">
             <h3 className="font-black text-lg mb-3">Suggested Groups</h3>
             <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-semibold">Mindful Weight Loss</p>
-                  <p className="text-xs text-slate-500">4.3k members</p>
-                </div>
-                <Button variant="secondary" className="py-2 px-3">
-                  Join
-                </Button>
-              </div>
+              {suggestedGroups.map((group) => {
+                const joined = joinedGroups.includes(group.name);
 
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-semibold">Anxiety Recovery</p>
-                  <p className="text-xs text-slate-500">2.1k members</p>
-                </div>
-                <Button variant="secondary" className="py-2 px-3">
-                  Join
-                </Button>
-              </div>
+                return (
+                  <div key={group.name} className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="font-semibold">{group.name}</p>
+                      <p className="text-xs text-slate-500">{group.members}</p>
+                      <p className="text-xs text-blue-600 font-bold">{group.topic}</p>
+                    </div>
+                    <Button
+                      variant={joined ? "primary" : "secondary"}
+                      className="py-2 px-3"
+                      onClick={() => toggleJoinGroup(group.name)}
+                    >
+                      {joined ? "Joined" : "Join"}
+                    </Button>
+                  </div>
+                );
+              })}
             </div>
           </Card>
         </div>
