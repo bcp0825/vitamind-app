@@ -165,6 +165,10 @@ function App() {
   const [screen, setScreen] = useState("website");
   const [session, setSession] = useState(null);
   const [subscriptionStatus, setSubscriptionStatus] = useState("inactive");
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [adminStats, setAdminStats] = useState(null);
+  const [adminLoading, setAdminLoading] = useState(false);
+  const [adminError, setAdminError] = useState("");
   const [authMode, setAuthMode] = useState("login");
   const [authEmail, setAuthEmail] = useState("");
   const [authPassword, setAuthPassword] = useState("");
@@ -283,24 +287,85 @@ function App() {
   );
 
 
+  async function logAppError(source, message, details = {}) {
+    try {
+      await fetch("/api/log-error", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          userId: session?.user?.id || null,
+          email: session?.user?.email || null,
+          source,
+          message,
+          details,
+          page: screen,
+          userAgent: navigator.userAgent
+        })
+      });
+    } catch (error) {
+      console.error("Error monitoring failed:", error);
+    }
+  }
+
+  async function loadAdminStats(currentSession) {
+    if (!currentSession?.user?.id) return;
+
+    setAdminLoading(true);
+    setAdminError("");
+
+    try {
+      const response = await fetch("/api/admin-stats", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          userId: currentSession.user.id
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setAdminError(data.error || "Admin dashboard failed.");
+        await logAppError("admin-stats", data.error || "Admin dashboard failed.", data);
+        setAdminLoading(false);
+        return;
+      }
+
+      setAdminStats(data);
+    } catch (error) {
+      console.error("Admin dashboard connection failed:", error);
+      setAdminError("Admin dashboard connection failed.");
+      await logAppError("admin-stats", error.message, {});
+    }
+
+    setAdminLoading(false);
+  }
+
   async function loadProfile(currentSession) {
     if (!currentSession?.user?.id) {
       setSubscriptionStatus("inactive");
+      setIsAdmin(false);
       return;
     }
 
     const { data, error } = await supabase
       .from("profiles")
-      .select("subscription_status")
+      .select("subscription_status, is_admin")
       .eq("id", currentSession.user.id)
       .single();
 
     if (error || !data) {
       setSubscriptionStatus("inactive");
+      setIsAdmin(false);
       return;
     }
 
     setSubscriptionStatus(data.subscription_status || "inactive");
+    setIsAdmin(Boolean(data.is_admin));
   }
 
   async function loadCheckins(currentSession) {
@@ -438,6 +503,7 @@ function App() {
       const { data } = await supabase.auth.getSession();
       setSession(data.session);
       await loadProfile(data.session);
+      await loadAdminStats(data.session);
       await loadCheckins(data.session);
       await loadFoodLogs(data.session);
       await loadCommunityPosts();
@@ -450,6 +516,7 @@ function App() {
     } = supabase.auth.onAuthStateChange(async (_event, currentSession) => {
       setSession(currentSession);
       await loadProfile(currentSession);
+      await loadAdminStats(currentSession);
       await loadCheckins(currentSession);
       await loadFoodLogs(currentSession);
       await loadCommunityPosts();
@@ -496,7 +563,7 @@ function App() {
 
           const { data: profileData } = await supabase
             .from("profiles")
-            .select("subscription_status")
+            .select("subscription_status, is_admin")
             .eq("id", data.session?.user?.id)
             .single();
 
@@ -518,6 +585,8 @@ function App() {
     await supabase.auth.signOut();
     setSession(null);
     setSubscriptionStatus("inactive");
+    setIsAdmin(false);
+    setAdminStats(null);
     setScreen("website");
   }
 
@@ -666,6 +735,7 @@ function App() {
 
       if (error) {
         console.error("Error saving food log:", error);
+        await logAppError("food-log-save", error.message, { foodEntry });
         alert("Food entry saved on screen, but it did not save to Supabase.");
       } else {
         await loadFoodLogs(session);
@@ -735,6 +805,7 @@ function App() {
       ]);
     } catch (error) {
       console.error(error);
+      await logAppError("ai-coach", error.message, { input: text });
 
       setMessages((prev) => [
         ...prev,
@@ -779,6 +850,7 @@ function App() {
             {[
               ["website", Sparkles, "Home"],
               ["auth", Users, session ? "Account" : "Login"],
+              ...(isAdmin ? [["admin", BarChart3, "Admin"]] : []),
               ["home", Home, "Dashboard"],
               ["checkin", Smile, "Check-In"],
               ["progress", BarChart3, "Progress"],
@@ -824,6 +896,14 @@ function App() {
                 handleLogout={handleLogout}
                 subscriptionStatus={subscriptionStatus}
                 startCheckout={startCheckout}
+              />
+            )}
+            {screen === "admin" && isAdmin && (
+              <AdminDashboard
+                adminStats={adminStats}
+                adminLoading={adminLoading}
+                adminError={adminError}
+                loadAdminStats={() => loadAdminStats(session)}
               />
             )}
             {screen === "home" && HAS_ACCESS && (
@@ -918,7 +998,8 @@ function App() {
               screen !== "privacy" &&
               screen !== "terms" &&
               screen !== "disclaimer" &&
-              screen !== "subscriptionPolicy" && (
+              screen !== "subscriptionPolicy" &&
+              screen !== "admin" && (
                 <Card className="p-10 text-center">
                   <h2 className="text-4xl font-black mb-4 text-blue-700">
                     Unlock Vitamind Premium
@@ -944,6 +1025,92 @@ function App() {
 
       </div>
     </div>
+  );
+}
+
+
+
+function AdminDashboard({ adminStats, adminLoading, adminError, loadAdminStats }) {
+  const stats = adminStats || {
+    totalUsers: 0,
+    activeSubscribers: 0,
+    monthlyRevenue: 0,
+    checkinsToday: 0,
+    foodLogsToday: 0,
+    communityPostsToday: 0,
+    errorsToday: 0,
+    latestErrors: [],
+  };
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
+      <Card className="p-8 bg-gradient-to-r from-blue-700 via-sky-500 to-teal-400 text-white border-none shadow-xl shadow-blue-100">
+        <p className="text-blue-100 font-semibold mb-2">Vitamind Admin</p>
+        <h2 className="text-5xl font-black mb-4">Admin Dashboard</h2>
+        <p className="text-blue-50 text-lg max-w-3xl">
+          Monitor users, subscribers, activity, estimated revenue, and app errors.
+        </p>
+
+        <button
+          onClick={loadAdminStats}
+          className="mt-5 rounded-2xl bg-white text-blue-700 px-5 py-3 font-bold hover:bg-blue-50 transition"
+        >
+          {adminLoading ? "Refreshing..." : "Refresh Stats"}
+        </button>
+      </Card>
+
+      {adminError && (
+        <Card className="p-5 border-red-200 bg-red-50">
+          <p className="font-black text-red-700">Admin Error</p>
+          <p className="text-red-600">{adminError}</p>
+        </Card>
+      )}
+
+      <div className="grid md:grid-cols-3 gap-4">
+        <Metric icon={Users} label="Total Users" value={stats.totalUsers} color="text-blue-600" bg="bg-blue-50" />
+        <Metric icon={CreditCard} label="Active Subscribers" value={stats.activeSubscribers} color="text-teal-600" bg="bg-teal-50" />
+        <Metric icon={TrendingUp} label="Est. Monthly Revenue" value={`$${Number(stats.monthlyRevenue || 0).toFixed(2)}`} color="text-green-600" bg="bg-green-50" />
+      </div>
+
+      <div className="grid md:grid-cols-4 gap-4">
+        <Metric icon={Smile} label="Check-ins Today" value={stats.checkinsToday} color="text-indigo-600" bg="bg-indigo-50" />
+        <Metric icon={Utensils} label="Food Logs Today" value={stats.foodLogsToday} color="text-orange-600" bg="bg-orange-50" />
+        <Metric icon={MessageCircle} label="Community Posts Today" value={stats.communityPostsToday} color="text-purple-600" bg="bg-purple-50" />
+        <Metric icon={ShieldCheck} label="Errors Today" value={stats.errorsToday} color="text-red-600" bg="bg-red-50" />
+      </div>
+
+      <Card className="p-6">
+        <h3 className="text-2xl font-black mb-4">Latest Error Reports</h3>
+
+        {stats.latestErrors && stats.latestErrors.length > 0 ? (
+          <div className="space-y-3">
+            {stats.latestErrors.map((error, i) => (
+              <div key={error.id || i} className="rounded-2xl bg-red-50 border border-red-100 p-4">
+                <div className="flex flex-wrap justify-between gap-2 mb-1">
+                  <p className="font-black text-red-700">{error.source || "App Error"}</p>
+                  <p className="text-xs text-slate-500">
+                    {error.created_at ? new Date(error.created_at).toLocaleString() : ""}
+                  </p>
+                </div>
+
+                <p className="text-sm text-slate-700">{error.message}</p>
+                {error.email && <p className="text-xs text-slate-500 mt-1">User: {error.email}</p>}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-slate-600">No error reports yet.</p>
+        )}
+      </Card>
+
+      <Card className="p-6">
+        <h3 className="text-2xl font-black mb-3">Admin Notes</h3>
+        <p className="text-slate-600">
+          Monthly revenue is estimated from active subscribers multiplied by $19.99/month.
+          Stripe remains the source of truth for exact revenue, refunds, trials, and cancellations.
+        </p>
+      </Card>
+    </motion.div>
   );
 }
 
