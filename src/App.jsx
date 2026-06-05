@@ -896,6 +896,7 @@ function App() {
                 handleLogout={handleLogout}
                 subscriptionStatus={subscriptionStatus}
                 startCheckout={startCheckout}
+                manageSubscription={manageSubscription}
               />
             )}
             {screen === "admin" && isAdmin && (
