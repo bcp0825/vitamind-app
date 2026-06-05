@@ -3,6 +3,8 @@
   "appName": "Vitamind",
   "webDir": "dist",
   "server": {
+    "url": "https://www.the-vitamind.com",
+    "cleartext": false,
     "androidScheme": "https"
   }
 }
