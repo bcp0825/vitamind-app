@@ -65,101 +65,348 @@ function Logo({ compact = false }) {
   );
 }
 
-const workouts = {
-  recovery: {
-    title: "Recovery Reset",
-    time: "18 min",
-    items: ["10-min walk", "5-min stretch", "3-min breathing"],
-    note: "Low-pressure movement for stressful, anxious, or low-energy days.",
+const recommendationPools = {
+  fitness: {
+    anxiety: [
+      {
+        title: "Calm Walk Reset",
+        time: "20 min",
+        focus: "Lower anxiety and release physical tension.",
+        items: ["8-min easy walk", "4-min box breathing", "5-min shoulder/neck mobility", "3-min slow cooldown"],
+        note: "Keep intensity low. The goal is nervous-system regulation, not performance.",
+      },
+      {
+        title: "Grounding Mobility Flow",
+        time: "16 min",
+        focus: "Reconnect with your body and reduce racing thoughts.",
+        items: ["Cat-cow stretch", "Child's pose breathing", "Standing hamstring stretch", "Slow wall push-ups"],
+        note: "Move slowly and name what you feel in your body as you stretch.",
+      },
+      {
+        title: "Anxiety Release Circuit",
+        time: "22 min",
+        focus: "Use gentle movement to discharge stress energy.",
+        items: ["March in place", "Bodyweight squats", "Wall push-ups", "Slow breathing between rounds"],
+        note: "Stop before exhaustion. Finish feeling steadier, not drained.",
+      },
+    ],
+    depression: [
+      {
+        title: "Mood Activation Walk",
+        time: "15 min",
+        focus: "Use small movement to support mood and motivation.",
+        items: ["Put on shoes", "Walk 5 minutes out", "Walk 5 minutes back", "Stretch 5 minutes"],
+        note: "Behavioral activation means action comes before motivation.",
+      },
+      {
+        title: "Low-Motivation Strength Start",
+        time: "18 min",
+        focus: "Build momentum with a very simple routine.",
+        items: ["Chair squats", "Incline push-ups", "Light rows", "Gentle core brace"],
+        note: "Completing a small workout counts as success today.",
+      },
+      {
+        title: "Energy Builder",
+        time: "25 min",
+        focus: "Increase energy with steady movement.",
+        items: ["10-min walk", "2 rounds bodyweight strength", "5-min stretch", "Hydration break"],
+        note: "Choose consistency over intensity.",
+      },
+    ],
+    adhd: [
+      {
+        title: "Focus Burst Workout",
+        time: "12 min",
+        focus: "Short structured movement for ADHD restlessness.",
+        items: ["2-min jumping jacks or marching", "10 squats", "10 wall push-ups", "Repeat 3 rounds"],
+        note: "Short workouts can help reset attention without feeling overwhelming.",
+      },
+      {
+        title: "Dopamine Movement Stack",
+        time: "20 min",
+        focus: "Use variety to keep the brain engaged.",
+        items: ["5-min walk", "5-min strength", "5-min mobility", "5-min music cooldown"],
+        note: "Changing stations helps reduce boredom and improves follow-through.",
+      },
+      {
+        title: "Restless Energy Reset",
+        time: "18 min",
+        focus: "Channel hyperactivity into useful movement.",
+        items: ["Fast walk", "Bodyweight lunges", "Plank hold", "Breathing cooldown"],
+        note: "Use movement as a regulation tool, not a punishment.",
+      },
+    ],
+    trauma: [
+      {
+        title: "Trauma-Informed Safety Flow",
+        time: "15 min",
+        focus: "Support safety, grounding, and body awareness.",
+        items: ["Feet on floor grounding", "Gentle seated stretch", "Slow walk", "Orient to the room"],
+        note: "Stay within your window of tolerance. You can stop anytime.",
+      },
+      {
+        title: "Body Safety Walk",
+        time: "18 min",
+        focus: "Pair movement with environmental safety cues.",
+        items: ["Notice 5 safe things", "Walk slowly", "Relax jaw/shoulders", "Name one supportive next step"],
+        note: "This is about feeling present and safe in your body.",
+      },
+      {
+        title: "Gentle Reset Routine",
+        time: "20 min",
+        focus: "Reduce physical tension connected to trauma stress.",
+        items: ["Breathing", "Neck mobility", "Hip stretch", "Slow walk"],
+        note: "No forced intensity. Gentle consistency is the goal.",
+      },
+    ],
+    sleep: [
+      {
+        title: "Low-Sleep Recovery Plan",
+        time: "14 min",
+        focus: "Protect recovery after poor sleep.",
+        items: ["Easy walk", "Light stretching", "Hydration", "Early bedtime plan"],
+        note: "Avoid hard training today if your body is under-recovered.",
+      },
+      {
+        title: "Evening Wind-Down Movement",
+        time: "12 min",
+        focus: "Prepare the body for better sleep.",
+        items: ["Slow breathing", "Hamstring stretch", "Chest opener", "Screen-free cooldown"],
+        note: "Make this calm and repeatable.",
+      },
+    ],
+    balanced: [
+      {
+        title: "Balanced Body Plan",
+        time: "32 min",
+        focus: "Build strength, mood stability, and consistency.",
+        items: ["Bodyweight squats", "Push-ups", "Rows", "Incline walk"],
+        note: "A steady workout that builds consistency without overwhelming you.",
+      },
+      {
+        title: "Mind-Body Strength",
+        time: "35 min",
+        focus: "Combine strength training with stress regulation.",
+        items: ["Warm-up walk", "Strength circuit", "Core work", "Breathing cooldown"],
+        note: "Train the body while keeping the nervous system calm.",
+      },
+      {
+        title: "Consistency Builder",
+        time: "28 min",
+        focus: "Maintain momentum with realistic movement.",
+        items: ["Walk", "Squats", "Push movement", "Pull movement", "Stretch"],
+        note: "This is a sustainable plan for normal-energy days.",
+      },
+    ],
+    push: [
+      {
+        title: "Strong Day Push",
+        time: "45 min",
+        focus: "Use high energy for a stronger training day.",
+        items: ["Full-body strength", "Intervals", "Core finisher", "Cooldown"],
+        note: "Challenge yourself while staying mindful of recovery.",
+      },
+      {
+        title: "Performance Builder",
+        time: "40 min",
+        focus: "Build strength and conditioning.",
+        items: ["Warm-up", "Strength blocks", "Cardio intervals", "Mobility cooldown"],
+        note: "Good for high-energy, low-stress days.",
+      },
+    ],
   },
-  balanced: {
-    title: "Balanced Body",
-    time: "32 min",
-    items: ["Bodyweight squats", "Push-ups", "Dumbbell rows", "Incline walk"],
-    note: "A steady workout that builds consistency without overwhelming you.",
-  },
-  push: {
-    title: "Strong Day Push",
-    time: "45 min",
-    items: ["Full-body strength", "Intervals", "Core finisher", "Cooldown"],
-    note: "For high-energy days when you are ready to challenge yourself.",
+  nutrition: {
+    anxiety: [
+      {
+        title: "Calm & Recovery Nutrition Plan",
+        focus: "Lower stress, support calm, and stabilize energy.",
+        meals: ["Breakfast: Greek yogurt, berries, oats, and water", "Lunch: Chicken, sweet potato, and greens", "Snack: Almonds, banana, or dark chocolate square", "Dinner: Turkey, rice, vegetables, and herbal tea"],
+        avoid: "Limit excess caffeine, skipped meals, and high-sugar snacks today.",
+        hydration: "Aim for steady water intake throughout the day.",
+      },
+      {
+        title: "Steady Blood Sugar Plan",
+        focus: "Reduce anxiety spikes by avoiding long gaps without food.",
+        meals: ["Breakfast: Eggs, toast, and fruit", "Lunch: Protein bowl with rice and vegetables", "Snack: Apple with peanut butter", "Dinner: Salmon or chicken with potatoes and greens"],
+        avoid: "Avoid energy drinks and large caffeine doses.",
+        hydration: "Sip water consistently instead of waiting until you feel drained.",
+      },
+    ],
+    depression: [
+      {
+        title: "Mood-Lift Nutrition Plan",
+        focus: "Support mood, energy, and motivation with simple meals.",
+        meals: ["Breakfast: Eggs, toast, fruit, and water", "Lunch: Chicken bowl with rice, beans, and vegetables", "Snack: Protein smoothie or peanut butter with apple", "Dinner: Lean protein, potatoes, and colorful vegetables"],
+        avoid: "Avoid skipping meals. Keep food simple and realistic today.",
+        hydration: "Add one extra glass of water with each meal.",
+      },
+      {
+        title: "Simple Fuel Plan",
+        focus: "Use easy meals when motivation is low.",
+        meals: ["Breakfast: Oatmeal with protein", "Lunch: Turkey wrap and fruit", "Snack: Greek yogurt", "Dinner: Rotisserie chicken, rice, and vegetables"],
+        avoid: "Avoid all-or-nothing eating. Something simple is better than nothing.",
+        hydration: "Keep a water bottle visible as a reminder cue.",
+      },
+    ],
+    adhd: [
+      {
+        title: "Focus Support Nutrition Plan",
+        focus: "Support attention with protein, hydration, and steady meals.",
+        meals: ["Breakfast: Eggs or Greek yogurt with oats", "Lunch: Chicken wrap with vegetables", "Snack: Cheese stick, nuts, or protein shake", "Dinner: Lean protein, rice, and greens"],
+        avoid: "Avoid relying only on sugar or caffeine for focus.",
+        hydration: "Drink water before and after stimulant/caffeine use if applicable.",
+      },
+      {
+        title: "ADHD Meal Simplicity Plan",
+        focus: "Reduce decision fatigue with repeatable meals.",
+        meals: ["Breakfast: Same easy protein breakfast", "Lunch: Pre-made bowl or wrap", "Snack: Grab-and-go protein", "Dinner: One-pan protein and vegetables"],
+        avoid: "Avoid complicated meal plans when executive functioning is low.",
+        hydration: "Use phone reminders for water and meals.",
+      },
+    ],
+    trauma: [
+      {
+        title: "Grounded Recovery Nutrition",
+        focus: "Use steady, comforting foods to support regulation.",
+        meals: ["Breakfast: Warm oats with protein", "Lunch: Soup, rice, and lean protein", "Snack: Banana or yogurt", "Dinner: Chicken, potatoes, and vegetables"],
+        avoid: "Avoid long periods without eating, which can increase body stress.",
+        hydration: "Warm tea or water can be part of a grounding routine.",
+      },
+    ],
+    sleep: [
+      {
+        title: "Sleep Recovery Meal Plan",
+        focus: "Support low energy and recovery after poor sleep.",
+        meals: ["Breakfast: Oatmeal, banana, and protein", "Lunch: Turkey wrap, fruit, and water", "Snack: Greek yogurt or boiled eggs", "Dinner: Chicken soup, rice, and vegetables"],
+        avoid: "Avoid heavy late meals and too much caffeine late in the day.",
+        hydration: "Focus on hydration early in the day.",
+      },
+    ],
+    performance: [
+      {
+        title: "Performance Fuel Nutrition Plan",
+        focus: "Fuel strength, movement, and consistency.",
+        meals: ["Breakfast: Eggs, oats, berries, and water", "Lunch: Lean protein, rice, vegetables, and avocado", "Snack: Protein shake or cottage cheese with fruit", "Dinner: Steak or chicken, potatoes, greens, and water"],
+        avoid: "Avoid under-eating on high-output days.",
+        hydration: "Add electrolytes if sweating heavily.",
+      },
+    ],
+    balanced: [
+      {
+        title: "Balanced Wellness Nutrition Plan",
+        focus: "Maintain stable mood, energy, and wellness habits.",
+        meals: ["Breakfast: Protein, fruit, and whole-grain carbs", "Lunch: Lean protein, vegetables, and healthy carbs", "Snack: Nuts, yogurt, or fruit", "Dinner: Balanced plate with protein, greens, and water"],
+        avoid: "Avoid all-or-nothing eating. Keep meals consistent.",
+        hydration: "Aim for regular water intake through the day.",
+      },
+      {
+        title: "Mind-Body Maintenance Plan",
+        focus: "Support steady mood and daily energy.",
+        meals: ["Breakfast: Protein plus fiber", "Lunch: Colorful protein bowl", "Snack: Fruit and protein", "Dinner: Lean protein with vegetables"],
+        avoid: "Avoid skipping meals when the day gets busy.",
+        hydration: "Use water with meals as an anchor habit.",
+      },
+    ],
   },
 };
 
-function buildNutritionPlan({ depression, anxiety, stress, motivation, energy, sleep }) {
+function recommendationIndex(values, length) {
+  const day = Math.floor(Date.now() / 86400000);
+  const score = values.reduce((sum, value) => sum + Number(value || 0), 0);
+  return Math.abs(day + score) % length;
+}
+
+function getRecommendationCategory({ depression, anxiety, stress, motivation, energy, sleep, inattention, impulsivity, hyperactivity, ptsd, traumaStress }) {
+  if (ptsd >= 7 || traumaStress >= 7) return "trauma";
+  if (anxiety >= 7 || stress >= 7) return "anxiety";
+  if (depression >= 7 || motivation <= 4) return "depression";
+  if (inattention >= 7 || impulsivity >= 7 || hyperactivity >= 7) return "adhd";
+  if (energy <= 4 || sleep <= 5) return "sleep";
+  if (motivation >= 8 && energy >= 8 && stress <= 4) return "push";
+  return "balanced";
+}
+
+function buildFitnessRecommendation(scores) {
+  const category = getRecommendationCategory(scores);
+  const poolKey = category === "push" ? "push" : category;
+  const pool = recommendationPools.fitness[poolKey] || recommendationPools.fitness.balanced;
+  const selected = pool[recommendationIndex(Object.values(scores), pool.length)];
+  return { ...selected, category: poolKey };
+}
+
+function buildNutritionPlan(scores) {
+  const category = getRecommendationCategory(scores);
+  const poolKey = category === "push" ? "performance" : category;
+  const pool = recommendationPools.nutrition[poolKey] || recommendationPools.nutrition.balanced;
+  const selected = pool[recommendationIndex(Object.values(scores), pool.length)];
+  return { ...selected, category: poolKey };
+}
+
+function buildTherapeuticSuggestion({ depression, anxiety, stress, motivation, inattention, impulsivity, hyperactivity, ptsd, traumaStress, energy, sleep }) {
+  if (ptsd >= 7 || traumaStress >= 7) {
+    return {
+      therapy: "Trauma-Informed Grounding",
+      skill: "5-4-3-2-1 Safety Scan",
+      why: "PTSD or trauma-stress ratings are elevated, so the priority is safety, grounding, and present-moment awareness.",
+      steps: ["Name 5 things you see", "Name 4 things you feel", "Name 3 things you hear", "Name 2 things you smell", "Name 1 thing you taste"],
+      prompt: "I am safe enough in this moment to take one slow breath and choose my next step.",
+    };
+  }
+
   if (anxiety >= 7 || stress >= 7) {
     return {
-      title: "Calm & Recovery Nutrition Plan",
-      focus: "Lower stress, support calm, and stabilize energy.",
-      meals: [
-        "Breakfast: Greek yogurt, berries, oats, and water",
-        "Lunch: Salmon or chicken, sweet potato, and greens",
-        "Snack: Almonds, banana, or dark chocolate square",
-        "Dinner: Turkey, rice, vegetables, and herbal tea",
-      ],
-      avoid: "Limit excess caffeine, skipped meals, and high-sugar snacks today.",
-      hydration: "Aim for steady water intake throughout the day.",
+      therapy: "CBT + Breathing Regulation",
+      skill: "Thought Check + Box Breathing",
+      why: "Anxiety or stress is elevated, so this skill targets racing thoughts and physical tension.",
+      steps: ["Write the anxious thought", "Ask: What evidence supports it?", "Ask: What evidence challenges it?", "Create one balanced thought", "Breathe in 4, hold 4, out 4, hold 4"],
+      prompt: "A thought can feel true without being the whole truth.",
     };
   }
 
   if (depression >= 7 || motivation <= 4) {
     return {
-      title: "Mood-Lift Nutrition Plan",
-      focus: "Support mood, energy, and motivation with simple meals.",
-      meals: [
-        "Breakfast: Eggs, toast, fruit, and water",
-        "Lunch: Chicken bowl with rice, beans, and vegetables",
-        "Snack: Protein smoothie or peanut butter with apple",
-        "Dinner: Lean protein, potatoes, and colorful vegetables",
-      ],
-      avoid: "Avoid skipping meals. Keep food simple and realistic today.",
-      hydration: "Add one extra glass of water with each meal.",
+      therapy: "Behavioral Activation",
+      skill: "One Small Meaningful Action",
+      why: "Low mood or low motivation often improves after action begins, not before.",
+      steps: ["Pick one 5-minute task", "Make it specific", "Do it before judging how you feel", "Mark it as a win", "Repeat one more small action if able"],
+      prompt: "Action before motivation. Small steps still count.",
+    };
+  }
+
+  if (inattention >= 7 || impulsivity >= 7 || hyperactivity >= 7) {
+    return {
+      therapy: "ADHD Skills Coaching",
+      skill: "Externalize the Plan",
+      why: "ADHD symptoms are elevated, so the goal is to reduce memory load and create structure outside the brain.",
+      steps: ["Write the next 3 tasks", "Circle the easiest one", "Set a 10-minute timer", "Remove one distraction", "Restart without shame if you drift"],
+      prompt: "I do not need the whole plan. I only need the next visible step.",
     };
   }
 
   if (energy <= 4 || sleep <= 5) {
     return {
-      title: "Low-Energy Recovery Meal Plan",
-      focus: "Refuel the body without overloading it.",
-      meals: [
-        "Breakfast: Oatmeal, banana, and protein",
-        "Lunch: Turkey wrap, fruit, and water",
-        "Snack: Greek yogurt or boiled eggs",
-        "Dinner: Chicken soup, rice, and vegetables",
-      ],
-      avoid: "Avoid heavy late meals and too much caffeine late in the day.",
-      hydration: "Focus on hydration early in the day.",
-    };
-  }
-
-  if (motivation >= 8 && energy >= 8) {
-    return {
-      title: "Performance Fuel Nutrition Plan",
-      focus: "Fuel strength, movement, and consistency.",
-      meals: [
-        "Breakfast: Eggs, oats, berries, and water",
-        "Lunch: Lean protein, rice, vegetables, and avocado",
-        "Snack: Protein shake or cottage cheese with fruit",
-        "Dinner: Steak or chicken, potatoes, greens, and water",
-      ],
-      avoid: "Avoid under-eating on high-output days.",
-      hydration: "Add electrolytes if sweating heavily.",
+      therapy: "Self-Compassion + Recovery Planning",
+      skill: "Lower the Bar, Keep the Routine",
+      why: "Low energy or poor sleep calls for recovery-based coping rather than pushing too hard.",
+      steps: ["Choose a lighter version of the task", "Hydrate", "Take a 10-minute walk or stretch", "Plan an earlier wind-down", "Avoid negative self-talk about needing rest"],
+      prompt: "Recovery is productive when my body is under-resourced.",
     };
   }
 
   return {
-    title: "Balanced Wellness Nutrition Plan",
-    focus: "Maintain stable mood, energy, and wellness habits.",
-    meals: [
-      "Breakfast: Protein, fruit, and whole-grain carbs",
-      "Lunch: Lean protein, vegetables, and healthy carbs",
-      "Snack: Nuts, yogurt, or fruit",
-      "Dinner: Balanced plate with protein, greens, and water",
-    ],
-    avoid: "Avoid all-or-nothing eating. Keep meals consistent.",
-    hydration: "Aim for regular water intake through the day.",
+    therapy: "ACT Values-Based Action",
+    skill: "Choose One Value-Aligned Step",
+    why: "Your scores are in a workable range, so this is a good time to build intentional habits.",
+    steps: ["Pick one value: health, family, faith, growth, peace, or discipline", "Choose one small action that matches it", "Do it for 10 minutes", "Notice the feeling without needing it to disappear", "Repeat tomorrow"],
+    prompt: "I can move toward what matters even when my feelings are imperfect.",
   };
 }
+
+const workouts = {
+  recovery: recommendationPools.fitness.anxiety[0],
+  balanced: recommendationPools.fitness.balanced[0],
+  push: recommendationPools.fitness.push[0],
+};
 
 function App() {
   const [screen, setScreen] = useState("website");
@@ -274,17 +521,33 @@ function App() {
     { date: "Fri", depression: 3, anxiety: 4, stress: 4, motivation: 7, energy: 7, sleep: 8 },
   ]);
 
-  const mode = useMemo(() => {
-    if (stress >= 7 || anxiety >= 7 || depression >= 7 || energy <= 4 || sleep <= 5) return "recovery";
-    if (motivation >= 8 && energy >= 8 && stress <= 4) return "push";
-    return "balanced";
-  }, [depression, anxiety, stress, motivation, energy, sleep]);
+  const wellnessScores = useMemo(
+    () => ({
+      depression,
+      anxiety,
+      stress,
+      ptsd,
+      traumaStress,
+      motivation,
+      inattention,
+      impulsivity,
+      hyperactivity,
+      energy,
+      sleep,
+      exercise,
+    }),
+    [depression, anxiety, stress, ptsd, traumaStress, motivation, inattention, impulsivity, hyperactivity, energy, sleep, exercise]
+  );
 
-  const plan = workouts[mode];
+  const mode = useMemo(() => getRecommendationCategory(wellnessScores), [wellnessScores]);
 
-  const nutritionPlan = useMemo(
-    () => buildNutritionPlan({ depression, anxiety, stress, motivation, energy, sleep }),
-    [depression, anxiety, stress, motivation, energy, sleep]
+  const plan = useMemo(() => buildFitnessRecommendation(wellnessScores), [wellnessScores]);
+
+  const nutritionPlan = useMemo(() => buildNutritionPlan(wellnessScores), [wellnessScores]);
+
+  const therapeuticSuggestion = useMemo(
+    () => buildTherapeuticSuggestion(wellnessScores),
+    [wellnessScores]
   );
 
 
@@ -913,8 +1176,6 @@ function App() {
               ["checkin", Smile, "Check-In"],
               ["progress", BarChart3, "Progress"],
               ["insights", TrendingUp, "Insights"],
-              ["fitness", Dumbbell, "Fitness"],
-              ["nutrition", Apple, "Nutrition"],
               ["foodlog", Utensils, "Food Log"],
               ["coach", MessageCircle, "AI Coach"],
               ["community", Users, "Community"],
@@ -1011,28 +1272,14 @@ function App() {
               />
             )}
             {screen === "progress" && HAS_ACCESS && <Progress history={history} />}
-            {screen === "insights" && HAS_ACCESS && <Insights history={history} foodLog={foodLog} setScreen={setScreen} />}
-            {screen === "fitness" && HAS_ACCESS && (
-              <Fitness
-                plan={plan}
-                mode={mode}
-                depression={depression}
-                anxiety={anxiety}
-                stress={stress}
-                motivation={motivation}
-                energy={energy}
-                sleep={sleep}
-              />
-            )}
-            {screen === "nutrition" && HAS_ACCESS && (
-              <Nutrition
+            {screen === "insights" && HAS_ACCESS && (
+              <Insights
+                history={history}
+                foodLog={foodLog}
+                setScreen={setScreen}
+                fitnessPlan={plan}
                 nutritionPlan={nutritionPlan}
-                depression={depression}
-                anxiety={anxiety}
-                stress={stress}
-                motivation={motivation}
-                energy={energy}
-                sleep={sleep}
+                therapeuticSuggestion={therapeuticSuggestion}
               />
             )}
             {screen === "foodlog" && HAS_ACCESS && (
@@ -1069,8 +1316,8 @@ function App() {
                   </h2>
 
                   <p className="text-slate-600 mb-8 text-lg">
-                    Log in and subscribe to access AI coaching, wellness tracking, fitness plans,
-                    nutrition guidance, food logs, and community features.
+                    Log in and subscribe to access AI coaching, wellness tracking, personalized insights,
+                    food logs, therapeutic suggestions, and community features.
                   </p>
 
                   <button
@@ -1616,8 +1863,8 @@ function HomeScreen({ depression, anxiety, stress, motivation, sleep, plan, nutr
       </div>
 
       <div className="grid md:grid-cols-3 gap-4">
-        <Action title="Suggested Workout" icon={Dumbbell} text={`${plan.time}: ${plan.items[0]}`} onClick={() => setScreen("fitness")} />
-        <Action title="Mood Nutrition" icon={Apple} text={nutritionPlan.focus} onClick={() => setScreen("nutrition")} />
+        <Action title="Fitness Insight" icon={Dumbbell} text={`${plan.time}: ${plan.items[0]}`} onClick={() => setScreen("insights")} />
+        <Action title="Nutrition Insight" icon={Apple} text={nutritionPlan.focus} onClick={() => setScreen("insights")} />
         <Action title="Talk to AI Coach" icon={MessageCircle} text="Ask for support based on your mood and stress." onClick={() => setScreen("coach")} />
         <Action title="Insights Dashboard" icon={TrendingUp} text="See trends from check-ins, sleep, exercise, and food logs." onClick={() => setScreen("insights")} />
       </div>
@@ -1747,7 +1994,7 @@ function Slider({ label, value, setValue, min = 1, max = 10, suffix = "/10" }) {
 }
 
 
-function Insights({ history, foodLog, setScreen }) {
+function Insights({ history, foodLog, setScreen, fitnessPlan, nutritionPlan, therapeuticSuggestion }) {
   const safeHistory = Array.isArray(history) ? history : [];
   const safeFoodLog = Array.isArray(foodLog) ? foodLog : [];
 
@@ -1954,6 +2201,66 @@ function Insights({ history, foodLog, setScreen }) {
         <Metric icon={Brain} label="Avg Depression" value={`${avg("depression")}/10`} color="text-indigo-600" bg="bg-indigo-50" />
         <Metric icon={Moon} label="Avg Sleep" value={`${avg("sleep")} hrs`} color="text-blue-600" bg="bg-blue-50" />
         <Metric icon={Activity} label="Avg Exercise" value={`${avg("exercise")}/10`} color="text-teal-600" bg="bg-teal-50" />
+      </div>
+
+      <div className="grid md:grid-cols-3 gap-4">
+        <Card className="p-6 border-2 border-blue-100">
+          <div className="h-12 w-12 rounded-2xl bg-blue-50 flex items-center justify-center mb-4">
+            <Dumbbell className="text-blue-600" />
+          </div>
+          <p className="text-blue-600 font-black uppercase text-sm mb-1">Fitness Recommendation</p>
+          <h3 className="text-2xl font-black mb-2">{fitnessPlan?.title}</h3>
+          <p className="text-slate-600 mb-3">{fitnessPlan?.focus || fitnessPlan?.note}</p>
+          <div className="rounded-2xl bg-blue-50 border border-blue-100 p-4 mb-3">
+            <p className="font-black text-blue-700 mb-2">Today’s Movement Plan • {fitnessPlan?.time}</p>
+            <ul className="space-y-1 text-sm text-slate-700">
+              {(fitnessPlan?.items || []).map((item, i) => (
+                <li key={i}>• {item}</li>
+              ))}
+            </ul>
+          </div>
+          <p className="text-sm text-slate-500">{fitnessPlan?.note}</p>
+        </Card>
+
+        <Card className="p-6 border-2 border-blue-100">
+          <div className="h-12 w-12 rounded-2xl bg-sky-50 flex items-center justify-center mb-4">
+            <Apple className="text-sky-600" />
+          </div>
+          <p className="text-blue-600 font-black uppercase text-sm mb-1">Nutrition Recommendation</p>
+          <h3 className="text-2xl font-black mb-2">{nutritionPlan?.title}</h3>
+          <p className="text-slate-600 mb-3">{nutritionPlan?.focus}</p>
+          <div className="rounded-2xl bg-sky-50 border border-sky-100 p-4 mb-3">
+            <p className="font-black text-sky-700 mb-2">Suggested Meals</p>
+            <ul className="space-y-1 text-sm text-slate-700">
+              {(nutritionPlan?.meals || []).slice(0, 4).map((meal, i) => (
+                <li key={i}>• {meal}</li>
+              ))}
+            </ul>
+          </div>
+          <p className="text-sm text-slate-500">{nutritionPlan?.hydration}</p>
+        </Card>
+
+        <Card className="p-6 border-2 border-blue-100">
+          <div className="h-12 w-12 rounded-2xl bg-indigo-50 flex items-center justify-center mb-4">
+            <Brain className="text-indigo-600" />
+          </div>
+          <p className="text-blue-600 font-black uppercase text-sm mb-1">Therapeutic Suggestion</p>
+          <h3 className="text-2xl font-black mb-2">{therapeuticSuggestion?.skill}</h3>
+          <p className="text-sm font-bold text-indigo-700 mb-2">{therapeuticSuggestion?.therapy}</p>
+          <p className="text-slate-600 mb-3">{therapeuticSuggestion?.why}</p>
+          <div className="rounded-2xl bg-indigo-50 border border-indigo-100 p-4 mb-3">
+            <p className="font-black text-indigo-700 mb-2">Practice Steps</p>
+            <ul className="space-y-1 text-sm text-slate-700">
+              {(therapeuticSuggestion?.steps || []).map((step, i) => (
+                <li key={i}>• {step}</li>
+              ))}
+            </ul>
+          </div>
+          <p className="text-sm italic text-slate-600">“{therapeuticSuggestion?.prompt}”</p>
+          <Button onClick={() => setScreen("coach")} variant="secondary" className="mt-4 w-full">
+            Ask AI Coach for More
+          </Button>
+        </Card>
       </div>
 
       <Card className="p-6 border-2 border-blue-200 bg-white">
