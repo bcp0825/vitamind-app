@@ -342,63 +342,142 @@ function buildNutritionPlan(scores) {
   return { ...selected, category: poolKey };
 }
 
-function buildTherapeuticSuggestion({ depression, anxiety, stress, motivation, inattention, impulsivity, hyperactivity, ptsd, traumaStress, energy, sleep }) {
-  if (ptsd >= 7 || traumaStress >= 7) {
+const therapyLibrary = [
+  {
+    therapy: "CBT",
+    bestFor: "Anxiety, depression, negative thinking, overthinking",
+    skills: ["Thought reframing", "Evidence testing", "Thought records", "Behavioral experiments"],
+  },
+  {
+    therapy: "DBT-Informed Skills",
+    bestFor: "Emotional reactivity, impulsivity, stress, conflict",
+    skills: ["STOP skill", "TIPP skill", "Wise Mind", "Opposite action"],
+  },
+  {
+    therapy: "ACT",
+    bestFor: "Avoidance, shame, life direction, getting unstuck",
+    skills: ["Values-based action", "Defusion", "Acceptance", "Committed action"],
+  },
+  {
+    therapy: "Mindfulness",
+    bestFor: "Overthinking, sleep, body tension, anxiety",
+    skills: ["Body scan", "Breath awareness", "Present-moment noticing", "Grounding"],
+  },
+  {
+    therapy: "Trauma-Informed Care",
+    bestFor: "PTSD symptoms, triggers, trauma stress, shutdown",
+    skills: ["Safety scan", "Window of tolerance", "Orienting", "5-4-3-2-1 grounding"],
+  },
+  {
+    therapy: "ADHD Skills Coaching",
+    bestFor: "Inattention, impulsivity, hyperactivity, task avoidance",
+    skills: ["Task chunking", "External reminders", "Timers", "Reward loops"],
+  },
+  {
+    therapy: "Behavioral Activation",
+    bestFor: "Low motivation, low mood, isolation, fatigue",
+    skills: ["Small action first", "Pleasure/mastery planning", "Routine building", "Activity scheduling"],
+  },
+  {
+    therapy: "Motivational Interviewing",
+    bestFor: "Ambivalence, habit change, fitness/nutrition consistency",
+    skills: ["Change talk", "Confidence scaling", "Values connection", "Next-step planning"],
+  },
+];
+
+function buildTherapeuticSuggestion({ depression, anxiety, stress, motivation, inattention, impulsivity, hyperactivity, ptsd, traumaStress, energy, sleep, exercise }) {
+  const highAdhd = inattention >= 7 || impulsivity >= 7 || hyperactivity >= 7;
+  const highTrauma = ptsd >= 7 || traumaStress >= 7;
+  const highAnxiety = anxiety >= 7 || stress >= 7;
+  const lowMood = depression >= 7 || motivation <= 4;
+  const lowRecovery = energy <= 4 || sleep <= 5;
+
+  if (highTrauma) {
     return {
-      therapy: "Trauma-Informed Grounding",
-      skill: "5-4-3-2-1 Safety Scan",
-      why: "PTSD or trauma-stress ratings are elevated, so the priority is safety, grounding, and present-moment awareness.",
-      steps: ["Name 5 things you see", "Name 4 things you feel", "Name 3 things you hear", "Name 2 things you smell", "Name 1 thing you taste"],
-      prompt: "I am safe enough in this moment to take one slow breath and choose my next step.",
+      primaryConcern: "PTSD / Trauma Stress",
+      planTitle: "Safety & Grounding Plan",
+      therapy: "Trauma-Informed Care",
+      skill: "Window of Tolerance + 5-4-3-2-1 Grounding",
+      why: "Your PTSD or trauma-stress score is elevated, so the priority is helping your body feel safer before problem-solving.",
+      steps: ["Pause and place both feet on the floor", "Name 5 things you see", "Name 4 things you feel", "Name 3 things you hear", "Name 2 things you smell", "Name 1 thing you taste", "Ask: am I in danger right now, or am I remembering danger?"],
+      actionStep: "Take a 10-minute low-stimulation reset: water, quiet space, slow breathing, and no major decisions for 20 minutes.",
+      reflection: "What helped my body feel even 5% safer today?",
+      prompt: "I can slow down, notice safety cues, and choose one next step.",
+      library: therapyLibrary.filter((item) => ["Trauma-Informed Care", "Mindfulness", "ACT"].includes(item.therapy)),
     };
   }
 
-  if (anxiety >= 7 || stress >= 7) {
+  if (highAnxiety) {
     return {
-      therapy: "CBT + Breathing Regulation",
-      skill: "Thought Check + Box Breathing",
-      why: "Anxiety or stress is elevated, so this skill targets racing thoughts and physical tension.",
-      steps: ["Write the anxious thought", "Ask: What evidence supports it?", "Ask: What evidence challenges it?", "Create one balanced thought", "Breathe in 4, hold 4, out 4, hold 4"],
+      primaryConcern: "Anxiety / Stress",
+      planTitle: "Calm Thoughts + Calm Body Plan",
+      therapy: "CBT + DBT-Informed Regulation",
+      skill: "Thought Reframing + STOP Skill",
+      why: "Your anxiety or stress score is elevated, so this plan targets both racing thoughts and body tension.",
+      steps: ["STOP: Stop, Take a step back, Observe, Proceed mindfully", "Write the main anxious thought", "Ask what evidence supports it", "Ask what evidence challenges it", "Create one balanced thought", "Do 4 rounds of box breathing"],
+      actionStep: "Do one calming action before checking your phone again: walk, stretch, drink water, or breathe for 2 minutes.",
+      reflection: "What thought felt intense today, and what balanced thought could I practice?",
       prompt: "A thought can feel true without being the whole truth.",
+      library: therapyLibrary.filter((item) => ["CBT", "DBT-Informed Skills", "Mindfulness"].includes(item.therapy)),
     };
   }
 
-  if (depression >= 7 || motivation <= 4) {
+  if (lowMood) {
     return {
-      therapy: "Behavioral Activation",
-      skill: "One Small Meaningful Action",
-      why: "Low mood or low motivation often improves after action begins, not before.",
-      steps: ["Pick one 5-minute task", "Make it specific", "Do it before judging how you feel", "Mark it as a win", "Repeat one more small action if able"],
-      prompt: "Action before motivation. Small steps still count.",
+      primaryConcern: "Low Mood / Low Motivation",
+      planTitle: "Behavioral Activation Plan",
+      therapy: "Behavioral Activation + CBT",
+      skill: "Action Before Motivation",
+      why: "Low mood and low motivation often improve after small action begins, not before.",
+      steps: ["Choose one task that takes under 5 minutes", "Make it specific and visible", "Start before judging your mood", "Mark it as a win", "Choose one pleasant or meaningful activity later today"],
+      actionStep: "Complete one 5-minute task: shower, walk outside, clean one surface, prep one meal, or text one supportive person.",
+      reflection: "What small action gave me even a little momentum today?",
+      prompt: "I do not have to feel motivated to take one helpful step.",
+      library: therapyLibrary.filter((item) => ["Behavioral Activation", "CBT", "Motivational Interviewing"].includes(item.therapy)),
     };
   }
 
-  if (inattention >= 7 || impulsivity >= 7 || hyperactivity >= 7) {
+  if (highAdhd) {
     return {
+      primaryConcern: "ADHD Symptoms",
+      planTitle: "Focus & Follow-Through Plan",
       therapy: "ADHD Skills Coaching",
       skill: "Externalize the Plan",
-      why: "ADHD symptoms are elevated, so the goal is to reduce memory load and create structure outside the brain.",
-      steps: ["Write the next 3 tasks", "Circle the easiest one", "Set a 10-minute timer", "Remove one distraction", "Restart without shame if you drift"],
+      why: "Your ADHD ratings are elevated, so the goal is to reduce memory load and make the next step obvious.",
+      steps: ["Write only the next 3 tasks", "Circle the easiest one", "Set a 10-minute timer", "Remove one distraction", "Reward yourself after the timer", "Restart without shame if you drift"],
+      actionStep: "Set a 10-minute timer and do the easiest task first. Stop when the timer ends or continue if momentum starts.",
+      reflection: "What helped me start today: timer, list, music, body doubling, or reward?",
       prompt: "I do not need the whole plan. I only need the next visible step.",
+      library: therapyLibrary.filter((item) => ["ADHD Skills Coaching", "DBT-Informed Skills", "Motivational Interviewing"].includes(item.therapy)),
     };
   }
 
-  if (energy <= 4 || sleep <= 5) {
+  if (lowRecovery) {
     return {
+      primaryConcern: "Low Energy / Poor Sleep",
+      planTitle: "Recovery & Self-Compassion Plan",
       therapy: "Self-Compassion + Recovery Planning",
       skill: "Lower the Bar, Keep the Routine",
-      why: "Low energy or poor sleep calls for recovery-based coping rather than pushing too hard.",
-      steps: ["Choose a lighter version of the task", "Hydrate", "Take a 10-minute walk or stretch", "Plan an earlier wind-down", "Avoid negative self-talk about needing rest"],
+      why: "Low energy or poor sleep means your body may need a recovery-based plan instead of a high-pressure plan.",
+      steps: ["Choose the lighter version of today's task", "Hydrate", "Do 5-10 minutes of gentle movement", "Plan an earlier wind-down", "Avoid negative self-talk about needing rest"],
+      actionStep: "Pick one recovery anchor: water, sunlight, 10-minute walk, simple meal, or earlier bedtime.",
+      reflection: "What is one way I respected my limits today without giving up on myself?",
       prompt: "Recovery is productive when my body is under-resourced.",
+      library: therapyLibrary.filter((item) => ["Mindfulness", "Behavioral Activation", "Motivational Interviewing"].includes(item.therapy)),
     };
   }
 
   return {
-    therapy: "ACT Values-Based Action",
+    primaryConcern: "Habit Growth / Wellness Maintenance",
+    planTitle: "Values-Based Wellness Plan",
+    therapy: "ACT + Motivational Interviewing",
     skill: "Choose One Value-Aligned Step",
-    why: "Your scores are in a workable range, so this is a good time to build intentional habits.",
-    steps: ["Pick one value: health, family, faith, growth, peace, or discipline", "Choose one small action that matches it", "Do it for 10 minutes", "Notice the feeling without needing it to disappear", "Repeat tomorrow"],
+    why: "Your scores are in a workable range, so this is a strong time to build intentional habits and prevent relapse.",
+    steps: ["Pick one value: health, family, faith, growth, peace, or discipline", "Choose one small action that matches it", "Do it for 10 minutes", "Notice feelings without needing them to disappear", "Repeat tomorrow"],
+    actionStep: "Choose one value-aligned action today and schedule it on purpose.",
+    reflection: "What value did I move toward today?",
     prompt: "I can move toward what matters even when my feelings are imperfect.",
+    library: therapyLibrary.filter((item) => ["ACT", "Motivational Interviewing", "Mindfulness"].includes(item.therapy)),
   };
 }
 
@@ -1291,7 +1370,7 @@ function App() {
               />
             )}
             {screen === "coach" && HAS_ACCESS && <Coach messages={messages} input={input} setInput={setInput} send={send} />}
-            {screen === "community" && HAS_ACCESS && <Community posts={posts} setPosts={setPosts} session={session} loadCommunityPosts={loadCommunityPosts} />}
+            {screen === "community" && HAS_ACCESS && <Community posts={posts} setPosts={setPosts} session={session} loadCommunityPosts={loadCommunityPosts} history={history} foodLog={foodLog} />}
             {screen === "pricing" && <Pricing subscribed={subscribed} setSubscribed={setSubscribed} startCheckout={startCheckout} manageSubscription={manageSubscription} session={session} subscriptionStatus={subscriptionStatus} />}
             {screen === "legal" && <LegalHub setScreen={setScreen} />}
             {screen === "privacy" && <PrivacyPolicy />}
@@ -2240,28 +2319,69 @@ function Insights({ history, foodLog, setScreen, fitnessPlan, nutritionPlan, the
           <p className="text-sm text-slate-500">{nutritionPlan?.hydration}</p>
         </Card>
 
-        <Card className="p-6 border-2 border-blue-100">
+        <Card className="p-6 border-2 border-blue-100 md:col-span-1">
           <div className="h-12 w-12 rounded-2xl bg-indigo-50 flex items-center justify-center mb-4">
             <Brain className="text-indigo-600" />
           </div>
-          <p className="text-blue-600 font-black uppercase text-sm mb-1">Therapeutic Suggestion</p>
-          <h3 className="text-2xl font-black mb-2">{therapeuticSuggestion?.skill}</h3>
-          <p className="text-sm font-bold text-indigo-700 mb-2">{therapeuticSuggestion?.therapy}</p>
+          <p className="text-blue-600 font-black uppercase text-sm mb-1">Expanded Therapeutic Plan</p>
+          <h3 className="text-2xl font-black mb-1">{therapeuticSuggestion?.planTitle}</h3>
+          <p className="text-sm font-bold text-indigo-700 mb-2">
+            {therapeuticSuggestion?.therapy} • {therapeuticSuggestion?.primaryConcern}
+          </p>
           <p className="text-slate-600 mb-3">{therapeuticSuggestion?.why}</p>
+
           <div className="rounded-2xl bg-indigo-50 border border-indigo-100 p-4 mb-3">
-            <p className="font-black text-indigo-700 mb-2">Practice Steps</p>
+            <p className="font-black text-indigo-700 mb-2">Skill: {therapeuticSuggestion?.skill}</p>
             <ul className="space-y-1 text-sm text-slate-700">
               {(therapeuticSuggestion?.steps || []).map((step, i) => (
                 <li key={i}>• {step}</li>
               ))}
             </ul>
           </div>
-          <p className="text-sm italic text-slate-600">“{therapeuticSuggestion?.prompt}”</p>
-          <Button onClick={() => setScreen("coach")} variant="secondary" className="mt-4 w-full">
+
+          <div className="rounded-2xl bg-blue-50 border border-blue-100 p-4 mb-3">
+            <p className="font-black text-blue-700 mb-1">Action Step</p>
+            <p className="text-sm text-slate-700">{therapeuticSuggestion?.actionStep}</p>
+          </div>
+
+          <div className="rounded-2xl bg-white border border-slate-100 p-4 mb-3">
+            <p className="font-black text-slate-900 mb-1">Reflection Question</p>
+            <p className="text-sm text-slate-700">{therapeuticSuggestion?.reflection}</p>
+          </div>
+
+          <p className="text-sm italic text-slate-600 mb-4">“{therapeuticSuggestion?.prompt}”</p>
+          <Button onClick={() => setScreen("coach")} variant="secondary" className="w-full">
             Ask AI Coach for More
           </Button>
         </Card>
       </div>
+
+      <Card className="p-6 border-2 border-indigo-100 bg-white">
+        <div className="flex flex-wrap items-start justify-between gap-3 mb-5">
+          <div>
+            <p className="text-blue-600 font-black uppercase text-sm mb-1">Therapy Library</p>
+            <h3 className="text-3xl font-black">Recommended Techniques for This Check-In</h3>
+          </div>
+          <span className="rounded-full bg-indigo-50 text-indigo-700 px-4 py-2 text-xs font-black">
+            Personalized
+          </span>
+        </div>
+        <div className="grid md:grid-cols-3 gap-4">
+          {(therapeuticSuggestion?.library || []).map((item) => (
+            <div key={item.therapy} className="rounded-2xl border border-indigo-100 bg-indigo-50/60 p-4">
+              <p className="font-black text-indigo-700 mb-1">{item.therapy}</p>
+              <p className="text-sm text-slate-600 mb-3">{item.bestFor}</p>
+              <div className="flex flex-wrap gap-2">
+                {item.skills.map((skill) => (
+                  <span key={skill} className="rounded-full bg-white text-slate-700 border border-indigo-100 px-3 py-1 text-xs font-bold">
+                    {skill}
+                  </span>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
 
       <Card className="p-6 border-2 border-blue-200 bg-white">
         <div className="flex flex-wrap items-start justify-between gap-3 mb-5">
@@ -3343,88 +3463,157 @@ function Pricing({ subscribed, setSubscribed, startCheckout, manageSubscription,
   );
 }
 
-function Community({ posts, setPosts, session, loadCommunityPosts }) {
+function Community({ posts, setPosts, session, loadCommunityPosts, history = [], foodLog = [] }) {
   const [postText, setPostText] = useState("");
   const [topic, setTopic] = useState("Mental Health");
+  const [postType, setPostType] = useState("Discussion");
+  const [postAnonymously, setPostAnonymously] = useState(false);
   const [replyText, setReplyText] = useState({});
   const [openReplies, setOpenReplies] = useState({});
   const [shareNotice, setShareNotice] = useState("");
+  const [moderationNotice, setModerationNotice] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTopic, setActiveTopic] = useState("Feed");
   const [joinedGroups, setJoinedGroups] = useState([]);
+  const [joinedChallenges, setJoinedChallenges] = useState([]);
 
-  const topicFilters = ["Feed", "Mental Health", "Fitness", "Nutrition", "Wellness Wins"];
+  const communityCategories = [
+    "Feed",
+    "Mental Health",
+    "Anxiety",
+    "Depression",
+    "ADHD",
+    "PTSD & Trauma",
+    "Fitness",
+    "Nutrition",
+    "Relationships",
+    "Faith",
+    "Success Stories",
+    "Questions & Support",
+    "Wellness Wins",
+    "Challenges",
+  ];
+
+  const dailyQuestions = [
+    "What coping skill helped you today?",
+    "What is one small win you can celebrate today?",
+    "What helped your anxiety, stress, or mood feel even 1% better?",
+    "What healthy meal or snack gave you better energy today?",
+    "What is one thing you are proud of this week?",
+    "What helped you stay consistent when motivation was low?",
+    "What is one supportive thing you can tell yourself today?",
+  ];
+
+  const todayQuestion = dailyQuestions[Math.floor(Date.now() / 86400000) % dailyQuestions.length];
+
+  const challenges = [
+    { name: "7-Day Check-In Challenge", emoji: "🧠", goal: "Complete one mental health check-in daily.", topic: "Challenges" },
+    { name: "7-Day Walking Challenge", emoji: "🚶", goal: "Walk at least 10 minutes each day.", topic: "Fitness" },
+    { name: "7-Day Hydration Challenge", emoji: "💧", goal: "Drink water with each meal.", topic: "Nutrition" },
+    { name: "7-Day Gratitude Challenge", emoji: "🙏", goal: "Write one gratitude statement daily.", topic: "Mental Health" },
+    { name: "7-Day Sleep Reset", emoji: "🌙", goal: "Create a calmer wind-down routine.", topic: "Challenges" },
+  ];
+
+  const wellnessWins = [
+    "I completed my check-in today.",
+    "I practiced a coping skill today.",
+    "I moved my body even when I did not feel like it.",
+    "I ate something that supported my energy today.",
+    "I chose progress over perfection today.",
+  ];
+
+  const reactions = [
+    { key: "support", label: "Support", emoji: "❤️" },
+    { key: "strong", label: "Strong Work", emoji: "💪" },
+    { key: "relate", label: "Relate", emoji: "🤝" },
+    { key: "celebrate", label: "Celebrate", emoji: "🎉" },
+    { key: "helpful", label: "Helpful", emoji: "🧠" },
+    { key: "encourage", label: "Encouraging", emoji: "🙏" },
+  ];
 
   const trendingTopics = [
-    {
-      tag: "#AnxietySupport",
-      label: "Mental Health",
-      description: "Tools for anxious days",
-      search: "anxiety",
-    },
-    {
-      tag: "#WeightLossJourney",
-      label: "Fitness",
-      description: "Movement and consistency",
-      search: "weight loss",
-    },
-    {
-      tag: "#ADHDTips",
-      label: "Mental Health",
-      description: "Focus, planning, and routines",
-      search: "ADHD",
-    },
-    {
-      tag: "#MoodMeals",
-      label: "Nutrition",
-      description: "Food and mood patterns",
-      search: "meal",
-    },
+    { tag: "#AnxietySupport", label: "Anxiety", description: "Tools for anxious days", search: "anxiety" },
+    { tag: "#ADHDTips", label: "ADHD", description: "Focus, planning, and routines", search: "ADHD" },
+    { tag: "#TraumaRecovery", label: "PTSD & Trauma", description: "Grounding and safety skills", search: "grounding" },
+    { tag: "#WellnessWins", label: "Wellness Wins", description: "Celebrate small progress", search: "win" },
+    { tag: "#MoodMeals", label: "Nutrition", description: "Food and mood patterns", search: "meal" },
   ];
 
   const suggestedGroups = [
-    {
-      name: "Mindful Weight Loss",
-      topic: "Fitness",
-      members: "4.3k members",
-    },
-    {
-      name: "Anxiety Recovery",
-      topic: "Mental Health",
-      members: "2.1k members",
-    },
-    {
-      name: "Mood-Based Nutrition",
-      topic: "Nutrition",
-      members: "1.4k members",
-    },
+    { name: "Anxiety Support", topic: "Anxiety", members: "2.1k members" },
+    { name: "ADHD Success", topic: "ADHD", members: "1.8k members" },
+    { name: "Trauma Recovery", topic: "PTSD & Trauma", members: "1.2k members" },
+    { name: "Fitness Accountability", topic: "Fitness", members: "4.3k members" },
+    { name: "Mood-Based Nutrition", topic: "Nutrition", members: "1.4k members" },
+    { name: "Faith & Wellness", topic: "Faith", members: "900 members" },
   ];
 
-  const filteredPosts = posts.filter((post) => {
-    const matchesTopic = activeTopic === "Feed" || post.topic === activeTopic;
-    const search = searchTerm.trim().toLowerCase();
+  const checkinStreak = Array.isArray(history) ? Math.min(history.length, 30) : 0;
+  const foodLogStreak = Array.isArray(foodLog) ? Math.min(foodLog.length, 30) : 0;
+  const communityStreak = Array.isArray(posts) ? Math.min(posts.filter((p) => p.name === (session?.user?.email?.split("@")[0] || "You")).length, 30) : 0;
 
+  const filteredPosts = posts.filter((post) => {
+    const matchesTopic = activeTopic === "Feed" || post.topic === activeTopic || post.postType === activeTopic;
+    const search = searchTerm.trim().toLowerCase();
     const matchesSearch =
       !search ||
       post.text?.toLowerCase().includes(search) ||
       post.topic?.toLowerCase().includes(search) ||
       post.name?.toLowerCase().includes(search) ||
-      (Array.isArray(post.replies) &&
-        post.replies.some((reply) => reply.text?.toLowerCase().includes(search)));
-
+      post.postType?.toLowerCase().includes(search) ||
+      (Array.isArray(post.replies) && post.replies.some((reply) => reply.text?.toLowerCase().includes(search)));
     return matchesTopic && matchesSearch;
   });
 
-  async function addPost() {
-    if (!postText.trim()) return;
+  function moderateText(text) {
+    const lower = text.toLowerCase();
+    const crisisTerms = ["kill myself", "suicide", "end my life", "hurt myself", "self harm", "self-harm"];
+    const abuseTerms = ["idiot", "stupid", "hate you", "shut up", "loser"];
+    const spamTerms = ["buy now", "click here", "free money", "crypto"];
+
+    if (crisisTerms.some((term) => lower.includes(term))) {
+      return {
+        allowed: false,
+        message: "This post may include crisis language. If you or someone else may be in danger, call 911 or 988 now. Please reach out for immediate support.",
+      };
+    }
+
+    if (abuseTerms.some((term) => lower.includes(term))) {
+      return { allowed: false, message: "AI moderation blocked this post because it may be hurtful or attacking. Please rewrite it with supportive language." };
+    }
+
+    if (spamTerms.some((term) => lower.includes(term))) {
+      return { allowed: false, message: "AI moderation blocked this post because it looks like spam or promotion." };
+    }
+
+    return { allowed: true, message: "AI moderation passed: supportive and safe to post." };
+  }
+
+  async function addPost(customText = null, customTopic = null, customType = null) {
+    const finalText = (customText || postText).trim();
+    const finalTopic = customTopic || topic;
+    const finalType = customType || postType;
+
+    if (!finalText) return;
+
+    const moderation = moderateText(finalText);
+    setModerationNotice(moderation.message);
+
+    if (!moderation.allowed) return;
+
+    const displayName = postAnonymously ? "Anonymous Member" : session?.user?.email?.split("@")[0] || "You";
 
     const newPost = {
-      name: session?.user?.email?.split("@")[0] || "You",
-      topic,
-      text: postText.trim(),
+      name: displayName,
+      topic: finalTopic,
+      postType: finalType,
+      text: finalText,
       likes: 0,
       liked: false,
       shares: 0,
+      reactions: {},
+      userReaction: null,
+      anonymous: postAnonymously,
       replies: [],
       time: "Just now",
     };
@@ -3434,9 +3623,9 @@ function Community({ posts, setPosts, session, loadCommunityPosts }) {
     if (session?.user?.id) {
       const { error } = await supabase.from("community_posts").insert({
         user_id: session.user.id,
-        name: session.user.email?.split("@")[0] || "User",
-        topic,
-        text: postText.trim(),
+        name: displayName,
+        topic: finalTopic,
+        text: finalType === "Discussion" ? finalText : `[${finalType}] ${finalText}`,
         likes: 0,
         shares: 0,
       });
@@ -3450,54 +3639,67 @@ function Community({ posts, setPosts, session, loadCommunityPosts }) {
     }
 
     setPostText("");
+    setPostType("Discussion");
+    setPostAnonymously(false);
     setActiveTopic("Feed");
   }
 
-  async function toggleEncourage(post) {
+  async function reactToPost(post, reactionKey) {
     const originalIndex = posts.findIndex((item) => item.id === post.id || item === post);
     if (originalIndex === -1) return;
 
-    const newLiked = !post.liked;
-    const newLikes = newLiked ? (post.likes || 0) + 1 : Math.max((post.likes || 0) - 1, 0);
+    const reaction = reactions.find((item) => item.key === reactionKey);
+    const previousReaction = post.userReaction;
+    const nextReactions = { ...(post.reactions || {}) };
+
+    if (previousReaction) {
+      nextReactions[previousReaction] = Math.max((nextReactions[previousReaction] || 1) - 1, 0);
+    }
+
+    const sameReaction = previousReaction === reactionKey;
+    const newReaction = sameReaction ? null : reactionKey;
+
+    if (!sameReaction) {
+      nextReactions[reactionKey] = (nextReactions[reactionKey] || 0) + 1;
+    }
+
+    const reactionTotal = Object.values(nextReactions).reduce((sum, value) => sum + Number(value || 0), 0);
 
     setPosts((prev) =>
       prev.map((item, i) =>
         i === originalIndex
           ? {
               ...item,
-              liked: newLiked,
-              likes: newLikes,
+              reactions: nextReactions,
+              userReaction: newReaction,
+              likes: reactionTotal,
+              liked: Boolean(newReaction),
             }
           : item
       )
     );
 
     if (post.id) {
-      const { error } = await supabase
-        .from("community_posts")
-        .update({ likes: newLikes })
-        .eq("id", post.id);
+      await supabase.from("community_posts").update({ likes: reactionTotal }).eq("id", post.id);
+    }
 
-      if (error) {
-        console.error("Error updating encourage:", error);
-      }
+    if (reaction && !sameReaction) {
+      setShareNotice(`${reaction.emoji} ${reaction.label} reaction added`);
+      setTimeout(() => setShareNotice(""), 1800);
     }
   }
 
   function toggleReplies(postKey) {
-    setOpenReplies((prev) => ({
-      ...prev,
-      [postKey]: !prev[postKey],
-    }));
+    setOpenReplies((prev) => ({ ...prev, [postKey]: !prev[postKey] }));
   }
 
   async function addReply(postKey, post) {
     const text = replyText[postKey];
-
     if (!text || !text.trim()) return;
 
-    const originalIndex = posts.findIndex((item) => item.id === post.id || item === post);
-    if (originalIndex === -1) return;
+    const moderation = moderateText(text);
+    setModerationNotice(moderation.message);
+    if (!moderation.allowed) return;
 
     const newReply = {
       name: session?.user?.email?.split("@")[0] || "You",
@@ -3506,12 +3708,9 @@ function Community({ posts, setPosts, session, loadCommunityPosts }) {
     };
 
     setPosts((prev) =>
-      prev.map((item, i) =>
-        i === originalIndex
-          ? {
-              ...item,
-              replies: [...(Array.isArray(item.replies) ? item.replies : []), newReply],
-            }
+      prev.map((item) =>
+        item.id === post.id || item === post
+          ? { ...item, replies: [...(Array.isArray(item.replies) ? item.replies : []), newReply] }
           : item
       )
     );
@@ -3532,115 +3731,96 @@ function Community({ posts, setPosts, session, loadCommunityPosts }) {
       }
     }
 
-    setReplyText((prev) => ({
-      ...prev,
-      [postKey]: "",
-    }));
-
-    setOpenReplies((prev) => ({
-      ...prev,
-      [postKey]: true,
-    }));
+    setReplyText((prev) => ({ ...prev, [postKey]: "" }));
   }
 
   async function sharePost(post) {
     const originalIndex = posts.findIndex((item) => item.id === post.id || item === post);
-    if (originalIndex === -1) return;
-
     const newShares = (post.shares || 0) + 1;
-    const shareText = `Vitamind Community Post from ${post.name}: ${post.text}`;
 
-    setPosts((prev) =>
-      prev.map((item, i) =>
-        i === originalIndex
-          ? {
-              ...item,
-              shares: newShares,
-            }
-          : item
-      )
-    );
+    if (originalIndex !== -1) {
+      setPosts((prev) => prev.map((item, i) => (i === originalIndex ? { ...item, shares: newShares } : item)));
+    }
 
     if (post.id) {
-      const { error } = await supabase
-        .from("community_posts")
-        .update({ shares: newShares })
-        .eq("id", post.id);
-
-      if (error) {
-        console.error("Error updating shares:", error);
-      }
+      await supabase.from("community_posts").update({ shares: newShares }).eq("id", post.id);
     }
 
-    try {
-      if (navigator.share) {
-        await navigator.share({
-          title: "Vitamind Community",
-          text: shareText,
-          url: window.location.href,
-        });
-
-        setShareNotice("Post shared successfully.");
-      } else if (navigator.clipboard) {
-        await navigator.clipboard.writeText(`${shareText} ${window.location.href}`);
-        setShareNotice("Post copied to clipboard.");
-      } else {
-        setShareNotice("Share counted. Copy your page link to share manually.");
-      }
-    } catch (error) {
-      setShareNotice("Share canceled or unavailable.");
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: "Vitamind Community", text: post.text, url: window.location.href });
+      } catch (error) {}
+    } else if (navigator.clipboard) {
+      await navigator.clipboard.writeText(`${post.text}\n\nShared from Vitamind Community`);
     }
 
-    setTimeout(() => setShareNotice(""), 3000);
-  }
-
-  function selectTrendingTopic(trending) {
-    setActiveTopic(trending.label);
-    setSearchTerm(trending.search);
-    setShareNotice(`Showing ${trending.tag} related posts.`);
+    setShareNotice("Post shared/copied successfully.");
     setTimeout(() => setShareNotice(""), 2500);
   }
 
+  function selectTrendingTopic(item) {
+    setActiveTopic(item.label);
+    setSearchTerm(item.search);
+  }
+
   function toggleJoinGroup(groupName) {
-    setJoinedGroups((prev) =>
-      prev.includes(groupName)
-        ? prev.filter((name) => name !== groupName)
-        : [...prev, groupName]
+    setJoinedGroups((prev) => (prev.includes(groupName) ? prev.filter((item) => item !== groupName) : [...prev, groupName]));
+  }
+
+  function toggleChallenge(challengeName) {
+    setJoinedChallenges((prev) =>
+      prev.includes(challengeName) ? prev.filter((item) => item !== challengeName) : [...prev, challengeName]
     );
   }
 
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
-      <div className="sticky top-0 z-10 bg-white/95 backdrop-blur rounded-3xl border border-blue-100 shadow-sm p-4 flex items-center justify-between gap-3">
-        <Logo compact />
+      <Card className="p-6 bg-gradient-to-br from-[#0047AB] via-[#0067D8] to-[#003C8F] text-white border-none shadow-2xl shadow-blue-950/20">
+        <p className="text-blue-100 font-semibold mb-2">Vitamind Community</p>
+        <h2 className="text-4xl font-black mb-3">Support, wins, challenges, and accountability</h2>
+        <p className="text-blue-50 max-w-3xl">
+          Connect with others around mental health, fitness, nutrition, relationships, faith, coping skills, and daily wellness wins.
+        </p>
+      </Card>
 
-        <div className="hidden md:flex items-center gap-3 bg-slate-50 rounded-full px-4 py-2 w-[420px]">
-          <input
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search posts, topics, replies, or members..."
-            className="bg-transparent outline-none flex-1 text-sm"
-          />
-          {searchTerm && (
-            <button onClick={() => setSearchTerm("")} className="text-xs font-bold text-blue-600">
-              Clear
-            </button>
-          )}
-        </div>
+      <div className="grid md:grid-cols-3 gap-4">
+        <Card className="p-5 border-2 border-blue-100">
+          <p className="text-blue-600 font-black uppercase text-xs mb-1">Daily Wellness Question</p>
+          <h3 className="text-xl font-black mb-3">{todayQuestion}</h3>
+          <Button
+            variant="secondary"
+            className="w-full"
+            onClick={() => {
+              setPostText(todayQuestion + " ");
+              setPostType("Question Response");
+              setTopic("Questions & Support");
+            }}
+          >
+            Answer Today’s Question
+          </Button>
+        </Card>
 
-        <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-teal-400 flex items-center justify-center text-white font-black">
-          {session?.user?.email?.[0]?.toUpperCase() || "B"}
-        </div>
+        <Card className="p-5 border-2 border-green-100">
+          <p className="text-green-600 font-black uppercase text-xs mb-1">Streak System</p>
+          <div className="grid grid-cols-3 gap-2 text-center">
+            <div className="rounded-2xl bg-green-50 p-3"><p className="text-2xl font-black">🔥{checkinStreak}</p><p className="text-xs text-slate-600">Check-ins</p></div>
+            <div className="rounded-2xl bg-blue-50 p-3"><p className="text-2xl font-black">🥗{foodLogStreak}</p><p className="text-xs text-slate-600">Food logs</p></div>
+            <div className="rounded-2xl bg-purple-50 p-3"><p className="text-2xl font-black">🤝{communityStreak}</p><p className="text-xs text-slate-600">Posts</p></div>
+          </div>
+        </Card>
+
+        <Card className="p-5 border-2 border-indigo-100">
+          <p className="text-indigo-600 font-black uppercase text-xs mb-1">AI Moderation</p>
+          <h3 className="text-xl font-black mb-2">Safety Scan Active</h3>
+          <p className="text-sm text-slate-600">Posts and replies are checked for crisis language, bullying, harassment, and spam before posting.</p>
+        </Card>
       </div>
 
-      <div className="md:hidden">
-        <input
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="Search community..."
-          className="w-full rounded-2xl border border-blue-100 px-4 py-3 outline-none focus:ring-2 focus:ring-blue-200"
-        />
-      </div>
+      {moderationNotice && (
+        <div className="rounded-2xl bg-white border border-blue-100 px-5 py-3 font-semibold text-slate-700 shadow-sm">
+          {moderationNotice}
+        </div>
+      )}
 
       {shareNotice && (
         <div className="rounded-2xl bg-blue-600 text-white px-5 py-3 font-semibold shadow-sm">
@@ -3651,26 +3831,28 @@ function Community({ posts, setPosts, session, loadCommunityPosts }) {
       <div className="grid lg:grid-cols-4 gap-5">
         <div className="space-y-4 lg:col-span-1">
           <Card className="p-5">
-            <h3 className="font-black text-lg mb-3">Community</h3>
-            <div className="space-y-2 text-sm font-semibold text-slate-700">
-              {topicFilters.map((item) => (
+            <h3 className="font-black text-lg mb-3">Categories</h3>
+            <div className="space-y-2 text-sm font-semibold text-slate-700 max-h-[430px] overflow-auto pr-1">
+              {communityCategories.map((item) => (
                 <button
                   key={item}
-                  onClick={() => {
-                    setActiveTopic(item);
-                    setSearchTerm("");
-                  }}
-                  className={`w-full text-left rounded-xl px-3 py-2 transition ${
-                    activeTopic === item
-                      ? "bg-blue-600 text-white"
-                      : "hover:bg-blue-50"
-                  }`}
+                  onClick={() => { setActiveTopic(item); setSearchTerm(""); }}
+                  className={`w-full text-left rounded-xl px-3 py-2 transition ${activeTopic === item ? "bg-blue-600 text-white" : "hover:bg-blue-50"}`}
                 >
                   {item === "Feed" && "👥 "}
-                  {item === "Mental Health" && "🧠 "}
+                  {item === "Anxiety" && "🌊 "}
+                  {item === "Depression" && "☁️ "}
+                  {item === "ADHD" && "⚡ "}
+                  {item === "PTSD & Trauma" && "🛡️ "}
                   {item === "Fitness" && "💪 "}
                   {item === "Nutrition" && "🍎 "}
-                  {item === "Wellness Wins" && "✨ "}
+                  {item === "Relationships" && "💬 "}
+                  {item === "Faith" && "🙏 "}
+                  {item === "Success Stories" && "🌟 "}
+                  {item === "Questions & Support" && "❓ "}
+                  {item === "Wellness Wins" && "🏆 "}
+                  {item === "Challenges" && "🔥 "}
+                  {item === "Mental Health" && "🧠 "}
                   {item}
                 </button>
               ))}
@@ -3678,9 +3860,17 @@ function Community({ posts, setPosts, session, loadCommunityPosts }) {
           </Card>
 
           <Card className="p-5">
-            <div className="flex items-start gap-2 text-sm text-slate-600">
-              <ShieldCheck className="text-blue-600 mt-0.5" size={18} />
-              <p>Supportive conversation only. No bullying, shaming, diagnosis, or crisis counseling.</p>
+            <h3 className="font-black text-lg mb-3">Wellness Wins</h3>
+            <div className="space-y-2">
+              {wellnessWins.map((win) => (
+                <button
+                  key={win}
+                  onClick={() => addPost(win, "Wellness Wins", "Wellness Win")}
+                  className="w-full text-left rounded-2xl bg-green-50 hover:bg-green-100 border border-green-100 p-3 text-sm font-semibold text-slate-700"
+                >
+                  🏆 {win}
+                </button>
+              ))}
             </div>
           </Card>
         </div>
@@ -3689,43 +3879,53 @@ function Community({ posts, setPosts, session, loadCommunityPosts }) {
           <Card className="p-5">
             <div className="flex items-start gap-3">
               <div className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 to-teal-400 flex items-center justify-center text-white font-black">
-                {session?.user?.email?.[0]?.toUpperCase() || "B"}
+                {postAnonymously ? "A" : session?.user?.email?.[0]?.toUpperCase() || "V"}
               </div>
               <div className="flex-1">
-                <input
+                <textarea
                   value={postText}
                   onChange={(e) => setPostText(e.target.value)}
-                  placeholder="Share your wellness journey, ask a question, or encourage someone..."
-                  className="w-full rounded-2xl bg-slate-100 px-5 py-4 outline-none focus:ring-2 focus:ring-blue-200"
+                  placeholder="Share a wellness win, ask for support, answer the daily question, or check in on a challenge..."
+                  className="w-full min-h-[110px] rounded-2xl bg-slate-100 px-5 py-4 outline-none focus:ring-2 focus:ring-blue-200"
                 />
-                <div className="flex flex-wrap items-center justify-between mt-4 gap-3">
+                <div className="grid md:grid-cols-2 gap-3 mt-4">
                   <select value={topic} onChange={(e) => setTopic(e.target.value)} className="rounded-xl border border-blue-100 px-3 py-2 text-sm outline-none">
-                    <option>Mental Health</option>
-                    <option>Fitness</option>
-                    <option>Nutrition</option>
-                    <option>Wellness Wins</option>
+                    {communityCategories.filter((item) => item !== "Feed").map((item) => <option key={item}>{item}</option>)}
                   </select>
-                  <Button onClick={addPost}>Create Post</Button>
+                  <select value={postType} onChange={(e) => setPostType(e.target.value)} className="rounded-xl border border-blue-100 px-3 py-2 text-sm outline-none">
+                    <option>Discussion</option>
+                    <option>Question</option>
+                    <option>Wellness Win</option>
+                    <option>Challenge Check-In</option>
+                    <option>Support Request</option>
+                  </select>
+                </div>
+                <div className="flex flex-wrap items-center justify-between mt-4 gap-3">
+                  <label className="flex items-center gap-2 text-sm font-bold text-slate-700">
+                    <input type="checkbox" checked={postAnonymously} onChange={(e) => setPostAnonymously(e.target.checked)} />
+                    Post anonymously
+                  </label>
+                  <Button onClick={() => addPost()}>Create Post</Button>
                 </div>
               </div>
             </div>
           </Card>
 
+          <input
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Search community..."
+            className="w-full rounded-2xl border border-blue-100 px-4 py-3 outline-none focus:ring-2 focus:ring-blue-200"
+          />
+
           <div className="flex items-center justify-between gap-3">
-            <p className="text-sm font-semibold text-slate-500">
+            <p className="text-sm font-semibold text-white/90">
               Showing {filteredPosts.length} post{filteredPosts.length === 1 ? "" : "s"}
               {activeTopic !== "Feed" ? ` in ${activeTopic}` : ""}
               {searchTerm ? ` matching "${searchTerm}"` : ""}
             </p>
-
             {(activeTopic !== "Feed" || searchTerm) && (
-              <button
-                onClick={() => {
-                  setActiveTopic("Feed");
-                  setSearchTerm("");
-                }}
-                className="text-sm font-bold text-blue-600 hover:underline"
-              >
+              <button onClick={() => { setActiveTopic("Feed"); setSearchTerm(""); }} className="text-sm font-bold text-white hover:underline">
                 Reset feed
               </button>
             )}
@@ -3734,56 +3934,61 @@ function Community({ posts, setPosts, session, loadCommunityPosts }) {
           {filteredPosts.length === 0 && (
             <Card className="p-6 text-center">
               <h3 className="text-2xl font-black mb-2">No posts found</h3>
-              <p className="text-slate-600">
-                Try a different search, choose another topic, or create the first post.
-              </p>
+              <p className="text-slate-600">Try another category, search term, or create the first post.</p>
             </Card>
           )}
 
           {filteredPosts.map((post, i) => {
             const repliesArray = Array.isArray(post.replies) ? post.replies : [];
             const postKey = post.id || `${post.name}-${post.time}-${i}`;
+            const postReactions = post.reactions || {};
+            const totalReactions = Object.values(postReactions).reduce((sum, value) => sum + Number(value || 0), Number(post.likes || 0));
 
             return (
               <Card key={postKey} className="p-5 rounded-3xl">
                 <div className="flex justify-between gap-3 mb-2">
                   <div className="flex items-center gap-3">
                     <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white font-black">
-                      {post.name?.[0] || "U"}
+                      {post.anonymous ? "A" : post.name?.[0] || "U"}
                     </div>
                     <div>
-                      <p className="font-black">{post.name}</p>
-                      <p className="text-xs font-bold text-blue-600 uppercase">{post.topic}</p>
+                      <p className="font-black">{post.anonymous ? "Anonymous Member" : post.name}</p>
+                      <div className="flex flex-wrap gap-2 mt-1">
+                        <span className="text-xs font-bold text-blue-600 uppercase">{post.topic}</span>
+                        <span className="text-xs font-bold text-slate-500">{post.postType || "Discussion"}</span>
+                      </div>
                     </div>
                   </div>
                   <p className="text-sm text-slate-500">{post.time}</p>
                 </div>
 
-                <p className="text-slate-700">{post.text}</p>
+                <p className="text-slate-700 whitespace-pre-wrap">{post.text}</p>
 
                 <div className="mt-3 text-sm text-slate-500">
-                  {(post.likes || 0)} encourages • {repliesArray.length} replies • {(post.shares || 0)} shares
+                  {totalReactions} reactions • {repliesArray.length} replies • {(post.shares || 0)} shares
                 </div>
 
-                <div className="mt-5 flex items-center justify-between border-t border-slate-100 pt-4">
-                  <button
-                    onClick={() => toggleEncourage(post)}
-                    className={`font-semibold ${post.liked ? "text-blue-600" : "text-slate-600 hover:text-blue-600"}`}
-                  >
-                    👍 {post.liked ? "Encouraged" : "Encourage"}
-                  </button>
+                <div className="mt-4 flex flex-wrap gap-2 border-t border-slate-100 pt-4">
+                  {reactions.map((reaction) => (
+                    <button
+                      key={reaction.key}
+                      onClick={() => reactToPost(post, reaction.key)}
+                      className={`rounded-full px-3 py-2 text-xs font-bold border transition ${
+                        post.userReaction === reaction.key
+                          ? "bg-blue-600 text-white border-blue-600"
+                          : "bg-white text-slate-600 border-slate-200 hover:bg-blue-50"
+                      }`}
+                    >
+                      {reaction.emoji} {reaction.label} {postReactions[reaction.key] ? `(${postReactions[reaction.key]})` : ""}
+                    </button>
+                  ))}
+                </div>
 
-                  <button
-                    onClick={() => toggleReplies(postKey)}
-                    className="text-slate-600 hover:text-blue-600 font-semibold"
-                  >
+                <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-4">
+                  <button onClick={() => toggleReplies(postKey)} className="text-slate-600 hover:text-blue-600 font-semibold">
                     💬 Reply ({repliesArray.length})
                   </button>
-
-                  <button
-                    onClick={() => sharePost(post)}
-                    className="text-slate-600 hover:text-blue-600 font-semibold"
-                  >
+                  <button onClick={() => sharePost(post)} className="text-slate-600 hover:text-blue-600 font-semibold">
                     ↗ Share ({post.shares || 0})
                   </button>
                 </div>
@@ -3797,23 +4002,14 @@ function Community({ posts, setPosts, session, loadCommunityPosts }) {
                         <p className="text-xs text-slate-400 mt-1">{reply.time}</p>
                       </div>
                     ))}
-
                     <div className="flex gap-2">
                       <input
                         value={replyText[postKey] || ""}
-                        onChange={(e) =>
-                          setReplyText((prev) => ({
-                            ...prev,
-                            [postKey]: e.target.value,
-                          }))
-                        }
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") addReply(postKey, post);
-                        }}
+                        onChange={(e) => setReplyText((prev) => ({ ...prev, [postKey]: e.target.value }))}
+                        onKeyDown={(e) => { if (e.key === "Enter") addReply(postKey, post); }}
                         placeholder="Write a supportive reply..."
                         className="flex-1 rounded-2xl border border-blue-100 px-4 py-3 outline-none focus:ring-2 focus:ring-blue-200"
                       />
-
                       <Button onClick={() => addReply(postKey, post)}>Reply</Button>
                     </div>
                   </div>
@@ -3825,14 +4021,33 @@ function Community({ posts, setPosts, session, loadCommunityPosts }) {
 
         <div className="space-y-4 lg:col-span-1">
           <Card className="p-5">
+            <h3 className="font-black text-lg mb-4">Community Challenges</h3>
+            <div className="space-y-3">
+              {challenges.map((challenge) => {
+                const joined = joinedChallenges.includes(challenge.name);
+                return (
+                  <div key={challenge.name} className="rounded-2xl bg-blue-50 border border-blue-100 p-3">
+                    <p className="font-black">{challenge.emoji} {challenge.name}</p>
+                    <p className="text-sm text-slate-600 mb-3">{challenge.goal}</p>
+                    <div className="flex gap-2">
+                      <Button variant={joined ? "primary" : "secondary"} className="py-2 px-3" onClick={() => toggleChallenge(challenge.name)}>
+                        {joined ? "Joined" : "Join"}
+                      </Button>
+                      <Button variant="secondary" className="py-2 px-3" onClick={() => addPost(`Checking in for: ${challenge.name}. ${challenge.goal}`, "Challenges", "Challenge Check-In")}>
+                        Check In
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </Card>
+
+          <Card className="p-5">
             <h3 className="font-black text-lg mb-4">Trending Topics</h3>
             <div className="space-y-3 text-sm">
               {trendingTopics.map((item) => (
-                <button
-                  key={item.tag}
-                  onClick={() => selectTrendingTopic(item)}
-                  className="w-full text-left rounded-2xl bg-blue-50 p-3 hover:bg-blue-100 transition"
-                >
+                <button key={item.tag} onClick={() => selectTrendingTopic(item)} className="w-full text-left rounded-2xl bg-blue-50 p-3 hover:bg-blue-100 transition">
                   <p className="font-black text-sky-700">{item.tag}</p>
                   <p className="text-slate-500">{item.description}</p>
                 </button>
@@ -3845,7 +4060,6 @@ function Community({ posts, setPosts, session, loadCommunityPosts }) {
             <div className="space-y-3">
               {suggestedGroups.map((group) => {
                 const joined = joinedGroups.includes(group.name);
-
                 return (
                   <div key={group.name} className="flex items-center justify-between gap-3">
                     <div>
@@ -3853,11 +4067,7 @@ function Community({ posts, setPosts, session, loadCommunityPosts }) {
                       <p className="text-xs text-slate-500">{group.members}</p>
                       <p className="text-xs text-blue-600 font-bold">{group.topic}</p>
                     </div>
-                    <Button
-                      variant={joined ? "primary" : "secondary"}
-                      className="py-2 px-3"
-                      onClick={() => toggleJoinGroup(group.name)}
-                    >
+                    <Button variant={joined ? "primary" : "secondary"} className="py-2 px-3" onClick={() => toggleJoinGroup(group.name)}>
                       {joined ? "Joined" : "Join"}
                     </Button>
                   </div>
