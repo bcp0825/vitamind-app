@@ -1096,6 +1096,9 @@ function App() {
 
         body: JSON.stringify({
           message: text,
+          userId: session?.user?.id || null,
+          email: session?.user?.email || null,
+          subscriptionStatus,
           checkin: {
             depression,
             anxiety,
@@ -1116,6 +1119,23 @@ function App() {
       });
 
       const data = await response.json();
+
+      if (response.status === 429) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "coach",
+            text:
+              data.reply ||
+              "You reached your AI Coach message limit for today. Come back tomorrow or manage your subscription for more access.",
+          },
+        ]);
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error(data.error || "AI Coach request failed.");
+      }
 
       setMessages((prev) => [
         ...prev,
