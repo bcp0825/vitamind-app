@@ -796,27 +796,77 @@ function App() {
       return;
     }
 
+    const postIds = (postsData || []).map((post) => post.id).filter(Boolean);
+    let reactionRows = [];
+    let userReactionRows = [];
+
+    if (postIds.length > 0) {
+      const { data: reactionsData, error: reactionsError } = await supabase
+        .from("community_reactions")
+        .select("post_id, user_id, reaction_type")
+        .in("post_id", postIds);
+
+      if (!reactionsError && Array.isArray(reactionsData)) {
+        reactionRows = reactionsData;
+      }
+
+      if (session?.user?.id) {
+        const { data: myReactionsData, error: myReactionsError } = await supabase
+          .from("community_reactions")
+          .select("post_id, reaction_type")
+          .eq("user_id", session.user.id)
+          .in("post_id", postIds);
+
+        if (!myReactionsError && Array.isArray(myReactionsData)) {
+          userReactionRows = myReactionsData;
+        }
+      }
+    }
+
+    const reactionCountsByPost = reactionRows.reduce((acc, row) => {
+      if (!acc[row.post_id]) acc[row.post_id] = {};
+      acc[row.post_id][row.reaction_type] = (acc[row.post_id][row.reaction_type] || 0) + 1;
+      return acc;
+    }, {});
+
+    const userReactionByPost = userReactionRows.reduce((acc, row) => {
+      acc[row.post_id] = row.reaction_type;
+      return acc;
+    }, {});
+
     const postsWithReplies = await Promise.all(
       (postsData || []).map(async (post) => {
         const { data: repliesData, error: repliesError } = await supabase
           .from("community_replies")
           .select("*")
           .eq("post_id", post.id)
-          .order("created_at", { ascending: true });
+          .order("created_at", { ascending: true })
+          .limit(25);
 
         if (repliesError) {
           console.error("Error loading replies:", repliesError);
         }
+
+        const displayText = post.text || "";
+        const postTypeMatch = displayText.match(/^\[(.*?)\]\s*(.*)$/);
+        const parsedPostType = postTypeMatch ? postTypeMatch[1] : post.post_type || "Discussion";
+        const parsedText = postTypeMatch ? postTypeMatch[2] : displayText;
+        const reactions = reactionCountsByPost[post.id] || {};
+        const reactionTotal = Object.values(reactions).reduce((sum, value) => sum + Number(value || 0), 0);
 
         return {
           id: post.id,
           user_id: post.user_id,
           name: post.name || "User",
           topic: post.topic || "Mental Health",
-          text: post.text || "",
-          likes: post.likes || 0,
-          liked: false,
+          postType: parsedPostType,
+          text: parsedText,
+          likes: reactionTotal || post.likes || 0,
+          liked: Boolean(userReactionByPost[post.id]),
           shares: post.shares || 0,
+          reactions,
+          userReaction: userReactionByPost[post.id] || null,
+          anonymous: (post.name || "").toLowerCase().includes("anonymous"),
           replies: (repliesData || []).map((reply) => ({
             id: reply.id,
             name: reply.name || "User",
@@ -1175,6 +1225,9 @@ function App() {
 
         body: JSON.stringify({
           message: text,
+          userId: session?.user?.id,
+          email: session?.user?.email,
+          subscriptionStatus,
           checkin: {
             depression,
             anxiety,
@@ -3476,6 +3529,10 @@ function Community({ posts, setPosts, session, loadCommunityPosts, history = [],
   const [activeTopic, setActiveTopic] = useState("Feed");
   const [joinedGroups, setJoinedGroups] = useState([]);
   const [joinedChallenges, setJoinedChallenges] = useState([]);
+  const [remoteChallenges, setRemoteChallenges] = useState([]);
+  const [dailyQuestionFromDb, setDailyQuestionFromDb] = useState(null);
+  const [challengeProgress, setChallengeProgress] = useState({});
+  const [communityLoading, setCommunityLoading] = useState(false);
 
   const communityCategories = [
     "Feed",
@@ -3504,15 +3561,18 @@ function Community({ posts, setPosts, session, loadCommunityPosts, history = [],
     "What is one supportive thing you can tell yourself today?",
   ];
 
-  const todayQuestion = dailyQuestions[Math.floor(Date.now() / 86400000) % dailyQuestions.length];
+  const fallbackQuestion = dailyQuestions[Math.floor(Date.now() / 86400000) % dailyQuestions.length];
+  const todayQuestion = dailyQuestionFromDb?.question || fallbackQuestion;
 
-  const challenges = [
+  const defaultChallenges = [
     { name: "7-Day Check-In Challenge", emoji: "🧠", goal: "Complete one mental health check-in daily.", topic: "Challenges" },
     { name: "7-Day Walking Challenge", emoji: "🚶", goal: "Walk at least 10 minutes each day.", topic: "Fitness" },
     { name: "7-Day Hydration Challenge", emoji: "💧", goal: "Drink water with each meal.", topic: "Nutrition" },
     { name: "7-Day Gratitude Challenge", emoji: "🙏", goal: "Write one gratitude statement daily.", topic: "Mental Health" },
     { name: "7-Day Sleep Reset", emoji: "🌙", goal: "Create a calmer wind-down routine.", topic: "Challenges" },
   ];
+
+  const challenges = remoteChallenges.length > 0 ? remoteChallenges : defaultChallenges;
 
   const wellnessWins = [
     "I completed my check-in today.",
@@ -3547,6 +3607,91 @@ function Community({ posts, setPosts, session, loadCommunityPosts, history = [],
     { name: "Mood-Based Nutrition", topic: "Nutrition", members: "1.4k members" },
     { name: "Faith & Wellness", topic: "Faith", members: "900 members" },
   ];
+
+  useEffect(() => {
+    async function loadCommunityExtras() {
+      setCommunityLoading(true);
+
+      try {
+        const today = new Date().toISOString().slice(0, 10);
+
+        const { data: questionData } = await supabase
+          .from("daily_wellness_questions")
+          .select("id, question, category, question_date")
+          .eq("question_date", today)
+          .maybeSingle();
+
+        if (questionData) {
+          setDailyQuestionFromDb(questionData);
+        }
+
+        const { data: challengesData } = await supabase
+          .from("community_challenges")
+          .select("id, title, description, category, start_date, end_date, is_active")
+          .eq("is_active", true)
+          .order("start_date", { ascending: false })
+          .limit(10);
+
+        if (Array.isArray(challengesData) && challengesData.length > 0) {
+          setRemoteChallenges(
+            challengesData.map((challenge) => ({
+              id: challenge.id,
+              name: challenge.title,
+              emoji:
+                challenge.category === "Fitness" ? "🚶" :
+                challenge.category === "Nutrition" ? "💧" :
+                challenge.category === "Sleep" ? "🌙" :
+                challenge.category === "Mindfulness" ? "🙏" : "🧠",
+              goal: challenge.description || "Complete the challenge and check in daily.",
+              topic: "Challenges",
+              category: challenge.category || "Wellness",
+              endDate: challenge.end_date,
+            }))
+          );
+        }
+
+        if (session?.user?.id && Array.isArray(challengesData) && challengesData.length > 0) {
+          const challengeIds = challengesData.map((challenge) => challenge.id);
+          const { data: progressData } = await supabase
+            .from("challenge_progress")
+            .select("challenge_id, progress_count, completed")
+            .eq("user_id", session.user.id)
+            .in("challenge_id", challengeIds);
+
+          if (Array.isArray(progressData)) {
+            setJoinedChallenges(progressData.map((row) => row.challenge_id));
+            setChallengeProgress(
+              progressData.reduce((acc, row) => {
+                acc[row.challenge_id] = row;
+                return acc;
+              }, {})
+            );
+          }
+        }
+      } catch (error) {
+        console.error("Error loading community extras:", error);
+      }
+
+      setCommunityLoading(false);
+    }
+
+    loadCommunityExtras();
+  }, [session?.user?.id]);
+
+  async function saveCommunityFlag({ postId = null, reason, severity = "review", aiDetected = true }) {
+    try {
+      await supabase.from("community_flags").insert({
+        post_id: postId,
+        user_id: session?.user?.id || null,
+        reason,
+        severity,
+        ai_detected: aiDetected,
+        reviewed: false,
+      });
+    } catch (error) {
+      console.error("Error saving community flag:", error);
+    }
+  }
 
   const checkinStreak = Array.isArray(history) ? Math.min(history.length, 30) : 0;
   const foodLogStreak = Array.isArray(foodLog) ? Math.min(foodLog.length, 30) : 0;
@@ -3599,7 +3744,10 @@ function Community({ posts, setPosts, session, loadCommunityPosts, history = [],
     const moderation = moderateText(finalText);
     setModerationNotice(moderation.message);
 
-    if (!moderation.allowed) return;
+    if (!moderation.allowed) {
+      await saveCommunityFlag({ reason: moderation.message, severity: "blocked", aiDetected: true });
+      return;
+    }
 
     const displayName = postAnonymously ? "Anonymous Member" : session?.user?.email?.split("@")[0] || "You";
 
@@ -3681,6 +3829,34 @@ function Community({ posts, setPosts, session, loadCommunityPosts, history = [],
 
     if (post.id) {
       await supabase.from("community_posts").update({ likes: reactionTotal }).eq("id", post.id);
+
+      if (session?.user?.id) {
+        if (sameReaction) {
+          await supabase
+            .from("community_reactions")
+            .delete()
+            .eq("post_id", post.id)
+            .eq("user_id", session.user.id)
+            .eq("reaction_type", reactionKey);
+        } else {
+          if (previousReaction) {
+            await supabase
+              .from("community_reactions")
+              .delete()
+              .eq("post_id", post.id)
+              .eq("user_id", session.user.id);
+          }
+
+          await supabase.from("community_reactions").upsert(
+            {
+              post_id: post.id,
+              user_id: session.user.id,
+              reaction_type: reactionKey,
+            },
+            { onConflict: "post_id,user_id,reaction_type" }
+          );
+        }
+      }
     }
 
     if (reaction && !sameReaction) {
@@ -3699,7 +3875,10 @@ function Community({ posts, setPosts, session, loadCommunityPosts, history = [],
 
     const moderation = moderateText(text);
     setModerationNotice(moderation.message);
-    if (!moderation.allowed) return;
+    if (!moderation.allowed) {
+      await saveCommunityFlag({ postId: post?.id || null, reason: moderation.message, severity: "blocked", aiDetected: true });
+      return;
+    }
 
     const newReply = {
       name: session?.user?.email?.split("@")[0] || "You",
@@ -3767,9 +3946,77 @@ function Community({ posts, setPosts, session, loadCommunityPosts, history = [],
     setJoinedGroups((prev) => (prev.includes(groupName) ? prev.filter((item) => item !== groupName) : [...prev, groupName]));
   }
 
-  function toggleChallenge(challengeName) {
+  async function toggleChallenge(challenge) {
+    const challengeKey = challenge.id || challenge.name;
+
     setJoinedChallenges((prev) =>
-      prev.includes(challengeName) ? prev.filter((item) => item !== challengeName) : [...prev, challengeName]
+      prev.includes(challengeKey) ? prev.filter((item) => item !== challengeKey) : [...prev, challengeKey]
+    );
+
+    if (!session?.user?.id || !challenge.id) return;
+
+    const alreadyJoined = joinedChallenges.includes(challengeKey);
+
+    try {
+      if (alreadyJoined) {
+        await supabase
+          .from("challenge_progress")
+          .delete()
+          .eq("challenge_id", challenge.id)
+          .eq("user_id", session.user.id);
+      } else {
+        await supabase.from("challenge_progress").upsert(
+          {
+            challenge_id: challenge.id,
+            user_id: session.user.id,
+            progress_count: 0,
+            completed: false,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "challenge_id,user_id" }
+        );
+      }
+    } catch (error) {
+      console.error("Error updating challenge join:", error);
+    }
+  }
+
+  async function checkInChallenge(challenge) {
+    const challengeKey = challenge.id || challenge.name;
+    const currentProgress = challengeProgress[challengeKey]?.progress_count || 0;
+    const nextProgress = currentProgress + 1;
+
+    setJoinedChallenges((prev) => (prev.includes(challengeKey) ? prev : [...prev, challengeKey]));
+    setChallengeProgress((prev) => ({
+      ...prev,
+      [challengeKey]: {
+        challenge_id: challengeKey,
+        progress_count: nextProgress,
+        completed: nextProgress >= 7,
+      },
+    }));
+
+    if (session?.user?.id && challenge.id) {
+      try {
+        await supabase.from("challenge_progress").upsert(
+          {
+            challenge_id: challenge.id,
+            user_id: session.user.id,
+            progress_count: nextProgress,
+            completed: nextProgress >= 7,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "challenge_id,user_id" }
+        );
+      } catch (error) {
+        console.error("Error saving challenge progress:", error);
+      }
+    }
+
+    await addPost(
+      `Checking in for: ${challenge.name}. Progress: ${nextProgress}/7. ${challenge.goal}`,
+      "Challenges",
+      "Challenge Check-In"
     );
   }
 
@@ -4024,16 +4271,19 @@ function Community({ posts, setPosts, session, loadCommunityPosts, history = [],
             <h3 className="font-black text-lg mb-4">Community Challenges</h3>
             <div className="space-y-3">
               {challenges.map((challenge) => {
-                const joined = joinedChallenges.includes(challenge.name);
+                const challengeKey = challenge.id || challenge.name;
+                const joined = joinedChallenges.includes(challengeKey);
+                const progress = challengeProgress[challengeKey]?.progress_count || 0;
                 return (
                   <div key={challenge.name} className="rounded-2xl bg-blue-50 border border-blue-100 p-3">
                     <p className="font-black">{challenge.emoji} {challenge.name}</p>
-                    <p className="text-sm text-slate-600 mb-3">{challenge.goal}</p>
+                    <p className="text-sm text-slate-600 mb-2">{challenge.goal}</p>
+                    {joined && <p className="text-xs font-black text-blue-700 mb-3">Progress: {progress}/7 {progress >= 7 ? "• Completed" : ""}</p>}
                     <div className="flex gap-2">
-                      <Button variant={joined ? "primary" : "secondary"} className="py-2 px-3" onClick={() => toggleChallenge(challenge.name)}>
+                      <Button variant={joined ? "primary" : "secondary"} className="py-2 px-3" onClick={() => toggleChallenge(challenge)}>
                         {joined ? "Joined" : "Join"}
                       </Button>
-                      <Button variant="secondary" className="py-2 px-3" onClick={() => addPost(`Checking in for: ${challenge.name}. ${challenge.goal}`, "Challenges", "Challenge Check-In")}>
+                      <Button variant="secondary" className="py-2 px-3" onClick={() => checkInChallenge(challenge)}>
                         Check In
                       </Button>
                     </div>
