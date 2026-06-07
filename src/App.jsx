@@ -27,7 +27,7 @@ const NAVY = "#FFFFFF";
 
 function Card({ children, className = "" }) {
   return (
-    <div className={`rounded-2xl bg-white shadow-xl shadow-blue-950/10 border border-white/20 ${className}`}>
+    <div className={`rounded-2xl bg-white shadow-2xl shadow-blue-950/10 border border-white/40 ring-1 ring-white/30 ${className}`}>
       {children}
     </div>
   );
@@ -1020,7 +1020,7 @@ function App() {
       }
     }
 
-    setScreen("home");
+    setScreen("insights");
   }
 
   async function addFoodEntry() {
@@ -1139,12 +1139,12 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#001B44] via-[#002B6B] to-[#0047AB] text-slate-900">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(255,255,255,0.24),_transparent_28%),linear-gradient(135deg,#001B44,#002B6B,#0047AB)] text-slate-900">
       <div className="mx-auto max-w-7xl p-4 md:p-8">
         <header className="flex items-center justify-between mb-6">
           <Logo />
           <div className="hidden md:flex items-center gap-3">
-            <div className="flex items-center gap-2 rounded-full bg-white/10 border border-white/20 px-4 py-2 shadow-sm text-sm text-white backdrop-blur">
+            <div className="flex items-center gap-2 rounded-full bg-white/20 border border-white/40 px-4 py-2 shadow-sm text-sm text-white backdrop-blur">
               <Sparkles size={16} className="text-blue-600" /> AI wellness platform
             </div>
 
@@ -1167,7 +1167,7 @@ function App() {
         </header>
 
         <div className="grid md:grid-cols-4 gap-5">
-          <nav className="bg-[#003C8F]/95 rounded-3xl border border-white/15 p-3 shadow-xl shadow-blue-950/30 h-fit md:col-span-1 backdrop-blur">
+          <nav className="bg-[#003C8F]/90 rounded-3xl border border-white/30 p-3 shadow-xl shadow-blue-950/30 h-fit md:col-span-1 backdrop-blur ring-1 ring-white/20">
             {[
               ["website", Sparkles, "Home"],
               ["auth", Users, session ? "Account" : "Login"],
@@ -1188,8 +1188,8 @@ function App() {
                 onClick={() => setScreen(key)}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl mb-1 font-semibold transition ${
                   screen === key
-                    ? "bg-[#1D7CFF] text-white shadow-md shadow-blue-950/30"
-                    : "text-blue-100 hover:bg-white/10"
+                    ? "bg-white text-[#003C8F] shadow-md shadow-blue-950/20"
+                    : "text-white/90 hover:bg-white/20"
                 }`}
               >
                 <Icon size={19} /> {label}
@@ -2606,6 +2606,73 @@ function Nutrition({ nutritionPlan, anxiety, stress, energy }) {
 }
 
 
+
+function buildFoodMoodSuggestions(foodLog = [], currentMood = "Neutral") {
+  const mood = currentMood || "Neutral";
+  const normalized = mood.toLowerCase();
+
+  const suggestionMap = {
+    calm: {
+      title: "Keep the Calm Going",
+      foods: ["Salmon or turkey with rice and greens", "Greek yogurt with berries", "Chamomile tea and a magnesium-rich snack"],
+      avoid: "Try not to overload caffeine or high-sugar snacks if you are already feeling balanced.",
+      why: "Your mood entry suggests your body responded well to steady, balanced fuel."
+    },
+    focused: {
+      title: "Focus-Supporting Food Ideas",
+      foods: ["Eggs with oatmeal and berries", "Chicken bowl with rice, vegetables, and avocado", "Cottage cheese or Greek yogurt with fruit"],
+      avoid: "Avoid skipping your next meal, because low blood sugar can make focus harder.",
+      why: "Protein plus slow-digesting carbs can help keep energy and attention more stable."
+    },
+    neutral: {
+      title: "Balanced Mood Meal Suggestions",
+      foods: ["Lean protein, colorful vegetables, and a healthy carb", "Turkey wrap with fruit and water", "Smoothie with protein, berries, and oats"],
+      avoid: "Avoid all-or-nothing eating. Aim for consistency instead of perfection.",
+      why: "A neutral mood is a good time to build repeatable habits that support tomorrow’s energy."
+    },
+    tired: {
+      title: "Low-Energy Food Support",
+      foods: ["Oatmeal with banana and protein", "Chicken soup with rice and vegetables", "Eggs, toast, fruit, and water"],
+      avoid: "Limit heavy greasy meals and late caffeine if sleep has been low.",
+      why: "Tired mood entries often pair well with hydration, protein, and gentle complex carbs."
+    },
+    sluggish: {
+      title: "Beat Sluggish Energy",
+      foods: ["Grilled chicken salad with sweet potato", "Tuna or turkey wrap with fruit", "Protein smoothie with spinach and berries"],
+      avoid: "Review large high-sugar or high-fat meals if they repeatedly show up before sluggish entries.",
+      why: "Your log can help identify meals that weigh you down versus meals that keep energy steady."
+    },
+    anxious: {
+      title: "Anxiety-Calming Food Ideas",
+      foods: ["Turkey, rice, vegetables, and water", "Greek yogurt with berries and oats", "Banana with peanut butter or almonds"],
+      avoid: "Consider reducing excess caffeine, energy drinks, and skipped meals on anxious days.",
+      why: "Steady meals may help reduce physical stress signals that can intensify anxiety."
+    },
+    energized: {
+      title: "Fuel the Momentum",
+      foods: ["Lean protein bowl with rice, vegetables, and avocado", "Eggs, oats, berries, and water", "Protein snack before or after movement"],
+      avoid: "Avoid under-eating on high-output days. Energy needs fuel to stay stable.",
+      why: "When energy is strong, balanced nutrition can help sustain it without a crash."
+    },
+  };
+
+  const base = suggestionMap[normalized] || suggestionMap.neutral;
+
+  const supportiveFoods = foodLog
+    .filter((item) => Number(item.energyAfter) >= 7 || ["Calm", "Focused", "Energized"].includes(item.mood))
+    .slice(0, 3);
+
+  const reviewFoods = foodLog
+    .filter((item) => Number(item.energyAfter) <= 4 || ["Tired", "Sluggish", "Anxious"].includes(item.mood))
+    .slice(0, 3);
+
+  return {
+    ...base,
+    supportiveFoods,
+    reviewFoods,
+  };
+}
+
 function FoodLog({ foodEntry, setFoodEntry, foodLog, addFoodEntry }) {
   const averageEnergy =
     foodLog.length > 0
@@ -2620,6 +2687,8 @@ function FoodLog({ foodEntry, setFoodEntry, foodLog, addFoodEntry }) {
     .filter((item) => Number(item.energyAfter) <= 4)
     .slice(0, 3);
 
+  const moodFoodSuggestion = buildFoodMoodSuggestions(foodLog, foodEntry.mood);
+
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
       <Card className="p-6 bg-gradient-to-br from-[#0047AB] via-[#0067D8] to-[#003C8F] text-white border-none shadow-2xl shadow-blue-950/20">
@@ -2628,6 +2697,32 @@ function FoodLog({ foodEntry, setFoodEntry, foodLog, addFoodEntry }) {
         <p className="text-blue-50 max-w-2xl">
           Track what you eat, how it affects your mood, and your energy after meals. Vitamind can use this pattern to help improve your nutrition suggestions.
         </p>
+      </Card>
+
+      <Card className="p-6 border-2 border-white bg-white">
+        <div className="flex items-start gap-4 mb-4">
+          <div className="h-12 w-12 rounded-2xl bg-blue-50 flex items-center justify-center shrink-0">
+            <Apple className="text-blue-600" />
+          </div>
+          <div>
+            <p className="text-blue-600 font-black uppercase text-sm mb-1">Mood-Based Food Suggestion</p>
+            <h3 className="text-2xl font-black mb-2">{moodFoodSuggestion.title}</h3>
+            <p className="text-slate-600">{moodFoodSuggestion.why}</p>
+          </div>
+        </div>
+
+        <div className="grid md:grid-cols-3 gap-4">
+          {moodFoodSuggestion.foods.map((food, i) => (
+            <div key={i} className="rounded-2xl bg-blue-50 border border-blue-100 p-4">
+              <p className="font-bold text-slate-800">{food}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-4 rounded-2xl bg-white border border-blue-100 p-4 shadow-sm">
+          <p className="font-black text-blue-700 mb-1">Helpful Reminder</p>
+          <p className="text-sm text-slate-600">{moodFoodSuggestion.avoid}</p>
+        </div>
       </Card>
 
       <Card className="p-6">
@@ -2733,6 +2828,36 @@ function FoodLog({ foodEntry, setFoodEntry, foodLog, addFoodEntry }) {
               </ul>
             ) : (
               <p className="text-slate-600">No low-energy meal patterns yet.</p>
+            )}
+          </div>
+        </div>
+      </Card>
+
+      <Card className="p-6 bg-white border-2 border-blue-100">
+        <h3 className="text-2xl font-black mb-4">Food Tracking Summary</h3>
+        <div className="grid md:grid-cols-2 gap-4">
+          <div className="rounded-2xl bg-blue-50 border border-blue-100 p-4">
+            <h4 className="font-black text-blue-700 mb-2">Foods that may support you</h4>
+            {moodFoodSuggestion.supportiveFoods.length > 0 ? (
+              <ul className="space-y-2 text-sm text-slate-700">
+                {moodFoodSuggestion.supportiveFoods.map((item, i) => (
+                  <li key={i}>✓ {item.food} — Mood: {item.mood}, Energy: {item.energyAfter}/10</li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-slate-600 text-sm">Add more food logs to find your best supportive meals.</p>
+            )}
+          </div>
+          <div className="rounded-2xl bg-white border border-blue-100 p-4 shadow-sm">
+            <h4 className="font-black text-blue-700 mb-2">Foods to watch for patterns</h4>
+            {moodFoodSuggestion.reviewFoods.length > 0 ? (
+              <ul className="space-y-2 text-sm text-slate-700">
+                {moodFoodSuggestion.reviewFoods.map((item, i) => (
+                  <li key={i}>• {item.food} — Mood: {item.mood}, Energy: {item.energyAfter}/10</li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-slate-600 text-sm">No concerning food patterns yet. Keep tracking meals and mood.</p>
             )}
           </div>
         </div>
@@ -3740,7 +3865,7 @@ function Community({ posts, setPosts, session, loadCommunityPosts }) {
               })}
             </div>
           </Card>
-        </div>
+        </div
       </div>
     </motion.div>
   );
