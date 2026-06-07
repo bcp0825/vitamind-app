@@ -23,11 +23,11 @@ import {
   Waves,
 } from "lucide-react";
 
-const NAVY = "#071E4A";
+const NAVY = "#FFFFFF";
 
 function Card({ children, className = "" }) {
   return (
-    <div className={`rounded-2xl bg-white/95 shadow-sm border border-blue-100 ${className}`}>
+    <div className={`rounded-2xl bg-white shadow-xl shadow-blue-950/10 border border-white/20 ${className}`}>
       {children}
     </div>
   );
@@ -36,8 +36,8 @@ function Card({ children, className = "" }) {
 function Button({ children, onClick, variant = "primary", className = "", type = "button" }) {
   const styles =
     variant === "primary"
-      ? "bg-blue-600 text-white hover:bg-blue-700"
-      : "bg-blue-50 text-blue-700 hover:bg-blue-100";
+      ? "bg-[#1D7CFF] text-white hover:bg-[#0B63CE] shadow-lg shadow-blue-900/20"
+      : "bg-white text-[#003C8F] hover:bg-blue-50 shadow-sm";
 
   return (
     <button type={type} onClick={onClick} className={`rounded-2xl px-4 py-3 font-semibold transition ${styles} ${className}`}>
@@ -49,7 +49,7 @@ function Button({ children, onClick, variant = "primary", className = "", type =
 function Logo({ compact = false }) {
   return (
     <div className="flex items-center gap-3">
-      <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-blue-500 via-sky-400 to-indigo-700 flex items-center justify-center shadow-lg shadow-blue-200">
+      <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-[#38BDF8] via-[#1D7CFF] to-[#003C8F] flex items-center justify-center shadow-lg shadow-blue-900/30">
         <div className="relative text-white font-black text-3xl leading-none">V</div>
       </div>
 
@@ -58,7 +58,7 @@ function Logo({ compact = false }) {
           <h1 className="text-3xl font-black tracking-tight" style={{ color: NAVY }}>
             Vitamind
           </h1>
-          <p className="text-sm text-slate-500">Mental and physical wellness connected.</p>
+          <p className="text-sm text-blue-100">Mental and physical wellness connected.</p>
         </div>
       )}
     </div>
@@ -876,26 +876,26 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-100 via-white to-sky-100 text-slate-900">
-      <div className="mx-auto max-w-6xl p-4 md:p-8">
+    <div className="min-h-screen bg-gradient-to-br from-[#001B44] via-[#002B6B] to-[#0047AB] text-slate-900">
+      <div className="mx-auto max-w-7xl p-4 md:p-8">
         <header className="flex items-center justify-between mb-6">
           <Logo />
           <div className="hidden md:flex items-center gap-3">
-            <div className="flex items-center gap-2 rounded-full bg-white border border-blue-100 px-4 py-2 shadow-sm text-sm text-slate-600">
+            <div className="flex items-center gap-2 rounded-full bg-white/10 border border-white/20 px-4 py-2 shadow-sm text-sm text-white backdrop-blur">
               <Sparkles size={16} className="text-blue-600" /> AI wellness platform
             </div>
 
             {session ? (
               <button
                 onClick={handleLogout}
-                className="rounded-full bg-blue-600 text-white px-4 py-2 font-semibold hover:bg-blue-700 transition text-sm"
+                className="rounded-full bg-[#1D7CFF] text-white px-4 py-2 font-semibold hover:bg-[#0B63CE] transition text-sm shadow-lg shadow-blue-900/20"
               >
                 Logout
               </button>
             ) : (
               <button
                 onClick={() => setScreen("auth")}
-                className="rounded-full bg-blue-600 text-white px-4 py-2 font-semibold hover:bg-blue-700 transition text-sm"
+                className="rounded-full bg-[#1D7CFF] text-white px-4 py-2 font-semibold hover:bg-[#0B63CE] transition text-sm shadow-lg shadow-blue-900/20"
               >
                 Login
               </button>
@@ -904,7 +904,7 @@ function App() {
         </header>
 
         <div className="grid md:grid-cols-4 gap-5">
-          <nav className="bg-white rounded-3xl border border-blue-100 p-3 shadow-sm h-fit md:col-span-1">
+          <nav className="bg-[#003C8F]/95 rounded-3xl border border-white/15 p-3 shadow-xl shadow-blue-950/30 h-fit md:col-span-1 backdrop-blur">
             {[
               ["website", Sparkles, "Home"],
               ["auth", Users, session ? "Account" : "Login"],
@@ -927,8 +927,8 @@ function App() {
                 onClick={() => setScreen(key)}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl mb-1 font-semibold transition ${
                   screen === key
-                    ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-100"
-                    : "text-slate-600 hover:bg-blue-50"
+                    ? "bg-[#1D7CFF] text-white shadow-md shadow-blue-950/30"
+                    : "text-blue-100 hover:bg-white/10"
                 }`}
               >
                 <Icon size={19} /> {label}
@@ -1075,7 +1075,7 @@ function App() {
 
                   <button
                     onClick={startCheckout}
-                    className="inline-block rounded-2xl px-8 py-4 font-bold bg-blue-600 text-white hover:bg-blue-700 transition"
+                    className="inline-block rounded-2xl px-8 py-4 font-bold bg-[#1D7CFF] text-white hover:bg-[#0B63CE] shadow-lg shadow-blue-900/20 transition"
                   >
                     Start 7-Day Free Trial
                   </button>
@@ -1107,7 +1107,7 @@ function AdminDashboard({ adminStats, adminLoading, adminError, loadAdminStats }
 
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
-      <Card className="p-8 bg-gradient-to-r from-blue-700 via-sky-500 to-teal-400 text-white border-none shadow-xl shadow-blue-100">
+      <Card className="p-8 bg-gradient-to-br from-[#0047AB] via-[#0067D8] to-[#003C8F] text-white border-none shadow-2xl shadow-blue-950/20">
         <p className="text-blue-100 font-semibold mb-2">Vitamind Admin</p>
         <h2 className="text-5xl font-black mb-4">Admin Dashboard</h2>
         <p className="text-blue-50 text-lg max-w-3xl">
@@ -1201,7 +1201,7 @@ function AuthScreen({
   if (authMode === "updatePassword") {
     return (
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
-        <Card className="p-8 bg-gradient-to-r from-blue-700 via-sky-500 to-teal-400 text-white border-none shadow-xl shadow-blue-100">
+        <Card className="p-8 bg-gradient-to-br from-[#0047AB] via-[#0067D8] to-[#003C8F] text-white border-none shadow-2xl shadow-blue-950/20">
           <p className="text-blue-100 font-semibold mb-2">Reset Password</p>
           <h2 className="text-5xl font-black mb-4">Create a new password</h2>
           <p className="text-blue-50 text-lg max-w-3xl">
@@ -1275,7 +1275,7 @@ function AuthScreen({
 
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
-      <Card className="p-8 bg-gradient-to-r from-blue-700 via-sky-500 to-teal-400 text-white border-none shadow-xl shadow-blue-100">
+      <Card className="p-8 bg-gradient-to-br from-[#0047AB] via-[#0067D8] to-[#003C8F] text-white border-none shadow-2xl shadow-blue-950/20">
         <p className="text-blue-100 font-semibold mb-2">Vitamind Account</p>
         <h2 className="text-5xl font-black mb-4">
           {authMode === "signup" ? "Create your account" : authMode === "forgot" ? "Reset your password" : "Welcome back"}
@@ -1378,7 +1378,7 @@ function AuthScreen({
 function Website({ setScreen, startCheckout }) {
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
-      <Card className="p-8 md:p-12 bg-gradient-to-r from-blue-700 via-sky-500 to-teal-400 text-white border-none shadow-xl shadow-blue-100 overflow-hidden relative">
+      <Card className="p-8 md:p-12 bg-gradient-to-br from-[#0047AB] via-[#0067D8] to-[#003C8F] text-white border-none shadow-2xl shadow-blue-950/20 overflow-hidden relative">
         <div className="max-w-3xl relative z-10">
           <p className="font-bold text-blue-100 mb-3">Vitamind Wellness Platform</p>
 
@@ -1420,7 +1420,7 @@ function Website({ setScreen, startCheckout }) {
         </FeatureCard>
       </div>
 
-      <Card className="p-6 md:p-8 bg-gradient-to-br from-blue-50 to-white border border-blue-100">
+      <Card className="p-6 md:p-8 bg-white border border-white/30">
         <div className="grid md:grid-cols-2 gap-6 items-center">
           <div>
             <p className="text-blue-600 font-black uppercase text-sm mb-2">
@@ -1541,7 +1541,7 @@ function Website({ setScreen, startCheckout }) {
         </div>
       </Card>
 
-      <Card className="p-6 md:p-8 bg-gradient-to-br from-white to-blue-50">
+      <Card className="p-6 md:p-8 bg-white">
         <div className="grid md:grid-cols-3 gap-5">
           <div>
             <h3 className="text-2xl font-black mb-2">Built for real life</h3>
@@ -1574,7 +1574,7 @@ function Website({ setScreen, startCheckout }) {
 
         <button
           onClick={startCheckout}
-          className="inline-block rounded-2xl px-8 py-4 font-bold bg-blue-600 text-white hover:bg-blue-700 transition"
+          className="inline-block rounded-2xl px-8 py-4 font-bold bg-[#1D7CFF] text-white hover:bg-[#0B63CE] shadow-lg shadow-blue-900/20 transition"
         >
           Start 7-Day Free Trial
         </button>
@@ -1598,7 +1598,7 @@ function FeatureCard({ icon: Icon, color, bg, title, children }) {
 function HomeScreen({ depression, anxiety, stress, motivation, sleep, plan, nutritionPlan, setScreen }) {
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
-      <Card className="p-6 bg-gradient-to-r from-blue-700 via-sky-500 to-teal-400 text-white border-none shadow-xl shadow-blue-100">
+      <Card className="p-6 bg-gradient-to-br from-[#0047AB] via-[#0067D8] to-[#003C8F] text-white border-none shadow-2xl shadow-blue-950/20">
         <p className="text-blue-100 font-semibold mb-2">Today’s Vitamind Plan</p>
         <h2 className="text-3xl md:text-5xl font-black mb-3">{plan.title}</h2>
         <p className="max-w-2xl text-blue-50">Based on your mental health check-in, today’s focus is: {plan.note}</p>
@@ -1932,7 +1932,7 @@ function Insights({ history, foodLog, setScreen }) {
 
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
-      <Card className="p-6 bg-gradient-to-r from-blue-700 via-sky-500 to-teal-400 text-white border-none shadow-xl shadow-blue-100">
+      <Card className="p-6 bg-gradient-to-br from-[#0047AB] via-[#0067D8] to-[#003C8F] text-white border-none shadow-2xl shadow-blue-950/20">
         <p className="text-blue-100 font-semibold mb-2">Vitamind Insights</p>
         <h2 className="text-4xl md:text-5xl font-black mb-3">Your Wellness Patterns</h2>
         <p className="text-blue-50 max-w-3xl">
@@ -1956,7 +1956,7 @@ function Insights({ history, foodLog, setScreen }) {
         <Metric icon={Activity} label="Avg Exercise" value={`${avg("exercise")}/10`} color="text-teal-600" bg="bg-teal-50" />
       </div>
 
-      <Card className="p-6 border-2 border-blue-200 bg-gradient-to-br from-white to-blue-50">
+      <Card className="p-6 border-2 border-blue-200 bg-white">
         <div className="flex flex-wrap items-start justify-between gap-3 mb-5">
           <div>
             <p className="text-blue-600 font-black uppercase text-sm mb-1">AI Trend Intelligence</p>
@@ -2011,7 +2011,7 @@ function Insights({ history, foodLog, setScreen }) {
           </div>
         </Card>
 
-        <Card className="p-6 bg-gradient-to-br from-blue-50 to-white border border-blue-100">
+        <Card className="p-6 bg-white border border-white/30">
           <h3 className="text-2xl font-black mb-4">Personalized Wellness Notes</h3>
 
           <div className="space-y-3 text-slate-700">
@@ -2127,7 +2127,7 @@ function Progress({ history }) {
 
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
-      <Card className="p-6 bg-gradient-to-r from-blue-700 via-sky-500 to-teal-400 text-white border-none shadow-xl shadow-blue-100">
+      <Card className="p-6 bg-gradient-to-br from-[#0047AB] via-[#0067D8] to-[#003C8F] text-white border-none shadow-2xl shadow-blue-950/20">
         <p className="text-blue-100 font-semibold mb-2">Weekly Wellness Tracking</p>
         <h2 className="text-4xl font-black mb-3">Your Check-In History</h2>
         <p className="text-blue-50 max-w-2xl">Review daily ratings, compare weekly patterns, and look back at past mental and physical wellness scores.</p>
@@ -2229,7 +2229,7 @@ function Fitness({ plan, mode, stress, energy, sleep }) {
 
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
-      <Card className="p-6 bg-gradient-to-r from-blue-700 via-sky-500 to-teal-400 text-white border-none shadow-xl shadow-blue-100">
+      <Card className="p-6 bg-gradient-to-br from-[#0047AB] via-[#0067D8] to-[#003C8F] text-white border-none shadow-2xl shadow-blue-950/20">
         <p className="text-blue-100 font-bold uppercase text-sm">{mode} mode</p>
         <h2 className="text-4xl font-black mb-2">{plan.title}</h2>
         <p className="text-blue-50 mb-5">{plan.note}</p>
@@ -2260,7 +2260,7 @@ function Fitness({ plan, mode, stress, energy, sleep }) {
 function Nutrition({ nutritionPlan, anxiety, stress, energy }) {
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
-      <Card className="p-6 bg-gradient-to-r from-blue-700 via-sky-500 to-teal-400 text-white border-none shadow-xl shadow-blue-100">
+      <Card className="p-6 bg-gradient-to-br from-[#0047AB] via-[#0067D8] to-[#003C8F] text-white border-none shadow-2xl shadow-blue-950/20">
         <p className="text-blue-100 font-semibold mb-2">Nutrition Based on Your Check-In</p>
         <h2 className="text-4xl font-black mb-3">{nutritionPlan.title}</h2>
         <p className="text-blue-50 max-w-2xl">{nutritionPlan.focus}</p>
@@ -2315,7 +2315,7 @@ function FoodLog({ foodEntry, setFoodEntry, foodLog, addFoodEntry }) {
 
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
-      <Card className="p-6 bg-gradient-to-r from-blue-700 via-sky-500 to-teal-400 text-white border-none shadow-xl shadow-blue-100">
+      <Card className="p-6 bg-gradient-to-br from-[#0047AB] via-[#0067D8] to-[#003C8F] text-white border-none shadow-2xl shadow-blue-950/20">
         <p className="text-blue-100 font-semibold mb-2">Food Tracking</p>
         <h2 className="text-4xl font-black mb-3">Daily Food Log</h2>
         <p className="text-blue-50 max-w-2xl">
@@ -2496,7 +2496,7 @@ function Support() {
       animate={{ opacity: 1, y: 0 }}
       className="space-y-5"
     >
-      <Card className="p-8 bg-gradient-to-r from-blue-700 via-sky-500 to-teal-400 text-white border-none shadow-xl shadow-blue-100">
+      <Card className="p-8 bg-gradient-to-br from-[#0047AB] via-[#0067D8] to-[#003C8F] text-white border-none shadow-2xl shadow-blue-950/20">
         <p className="text-blue-100 font-semibold mb-2">
           Vitamind Customer Support
         </p>
@@ -2529,7 +2529,7 @@ function Support() {
           </p>
         </Card>
 
-        <Card className="p-6 bg-gradient-to-br from-blue-50 to-white border border-blue-100">
+        <Card className="p-6 bg-white border border-white/30">
           <h3 className="text-2xl font-black mb-4">
             Common Support Topics
           </h3>
@@ -2593,7 +2593,7 @@ function LegalHub({ setScreen }) {
 
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
-      <Card className="p-8 bg-gradient-to-r from-blue-700 via-sky-500 to-teal-400 text-white border-none shadow-xl shadow-blue-100">
+      <Card className="p-8 bg-gradient-to-br from-[#0047AB] via-[#0067D8] to-[#003C8F] text-white border-none shadow-2xl shadow-blue-950/20">
         <p className="text-blue-100 font-semibold mb-2">Vitamind Legal Center</p>
         <h2 className="text-5xl font-black mb-4">Legal Information</h2>
         <p className="text-blue-50 text-lg max-w-3xl">
@@ -2639,7 +2639,7 @@ function LegalHub({ setScreen }) {
 function LegalPage({ title, subtitle, children }) {
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
-      <Card className="p-8 bg-gradient-to-r from-blue-700 via-sky-500 to-teal-400 text-white border-none shadow-xl shadow-blue-100">
+      <Card className="p-8 bg-gradient-to-br from-[#0047AB] via-[#0067D8] to-[#003C8F] text-white border-none shadow-2xl shadow-blue-950/20">
         <p className="text-blue-100 font-semibold mb-2">Vitamind Legal Information</p>
         <h2 className="text-4xl md:text-5xl font-black mb-4">{title}</h2>
         <p className="text-blue-50 text-lg max-w-3xl">{subtitle}</p>
@@ -2863,7 +2863,7 @@ function Footer({ setScreen }) {
 function Pricing({ subscribed, setSubscribed, startCheckout, manageSubscription, session, subscriptionStatus }) {
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
-      <Card className="p-6 bg-gradient-to-r from-blue-700 via-indigo-600 to-sky-500 text-white border-none shadow-xl shadow-blue-100">
+      <Card className="p-6 bg-gradient-to-r from-blue-700 via-indigo-600 to-sky-500 text-white border-none shadow-2xl shadow-blue-950/20">
         <p className="text-blue-100 font-semibold mb-2">Vitamind Premium</p>
         <h2 className="text-4xl font-black mb-3">Unlock your full wellness transformation</h2>
         <p className="text-blue-50 max-w-2xl">Daily mental health check-ins, adaptive workouts, mood-based nutrition, AI coaching, and a supportive wellness community.</p>
@@ -2891,7 +2891,7 @@ function Pricing({ subscribed, setSubscribed, startCheckout, manageSubscription,
           </ul>
           <button
             onClick={startCheckout}
-            className="block w-full text-center rounded-2xl px-4 py-4 font-semibold bg-blue-600 text-white hover:bg-blue-700 transition"
+            className="block w-full text-center rounded-2xl px-4 py-4 font-semibold bg-[#1D7CFF] text-white hover:bg-[#0B63CE] shadow-lg shadow-blue-900/20 transition"
           >
             {session ? "Start 7-Day Free Trial" : "Login to Start Free Trial"}
           </button>
@@ -2899,7 +2899,7 @@ function Pricing({ subscribed, setSubscribed, startCheckout, manageSubscription,
           {session && subscriptionStatus === "active" && (
             <button
               onClick={manageSubscription}
-              className="mt-3 block w-full text-center rounded-2xl px-4 py-4 font-semibold bg-blue-50 text-blue-700 hover:bg-blue-100 transition border border-blue-200"
+              className="mt-3 block w-full text-center rounded-2xl px-4 py-4 font-semibold bg-white text-[#003C8F] hover:bg-blue-50 shadow-sm transition border border-blue-200"
             >
               Manage / Cancel Subscription
             </button>
