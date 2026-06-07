@@ -3865,7 +3865,7 @@ function Community({ posts, setPosts, session, loadCommunityPosts }) {
               })}
             </div>
           </Card>
-        </div
+        </div>
       </div>
     </motion.div>
   );
