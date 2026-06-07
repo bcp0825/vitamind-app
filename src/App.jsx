@@ -27,7 +27,7 @@ const NAVY = "#FFFFFF";
 
 function Card({ children, className = "" }) {
   return (
-    <div className={`rounded-2xl bg-white shadow-2xl shadow-blue-950/10 border border-white/40 ring-1 ring-white/30 ${className}`}>
+    <div className={`rounded-[2rem] bg-white shadow-xl shadow-blue-950/10 border border-white/60 ring-1 ring-white/40 ${className}`}>
       {children}
     </div>
   );
@@ -40,7 +40,7 @@ function Button({ children, onClick, variant = "primary", className = "", type =
       : "bg-white text-[#003C8F] hover:bg-blue-50 shadow-sm";
 
   return (
-    <button type={type} onClick={onClick} className={`rounded-2xl px-4 py-3 font-semibold transition ${styles} ${className}`}>
+    <button type={type} onClick={onClick} className={`rounded-full px-5 py-3 font-semibold transition active:scale-[0.98] ${styles} ${className}`}>
       {children}
     </button>
   );
@@ -796,77 +796,27 @@ function App() {
       return;
     }
 
-    const postIds = (postsData || []).map((post) => post.id).filter(Boolean);
-    let reactionRows = [];
-    let userReactionRows = [];
-
-    if (postIds.length > 0) {
-      const { data: reactionsData, error: reactionsError } = await supabase
-        .from("community_reactions")
-        .select("post_id, user_id, reaction_type")
-        .in("post_id", postIds);
-
-      if (!reactionsError && Array.isArray(reactionsData)) {
-        reactionRows = reactionsData;
-      }
-
-      if (session?.user?.id) {
-        const { data: myReactionsData, error: myReactionsError } = await supabase
-          .from("community_reactions")
-          .select("post_id, reaction_type")
-          .eq("user_id", session.user.id)
-          .in("post_id", postIds);
-
-        if (!myReactionsError && Array.isArray(myReactionsData)) {
-          userReactionRows = myReactionsData;
-        }
-      }
-    }
-
-    const reactionCountsByPost = reactionRows.reduce((acc, row) => {
-      if (!acc[row.post_id]) acc[row.post_id] = {};
-      acc[row.post_id][row.reaction_type] = (acc[row.post_id][row.reaction_type] || 0) + 1;
-      return acc;
-    }, {});
-
-    const userReactionByPost = userReactionRows.reduce((acc, row) => {
-      acc[row.post_id] = row.reaction_type;
-      return acc;
-    }, {});
-
     const postsWithReplies = await Promise.all(
       (postsData || []).map(async (post) => {
         const { data: repliesData, error: repliesError } = await supabase
           .from("community_replies")
           .select("*")
           .eq("post_id", post.id)
-          .order("created_at", { ascending: true })
-          .limit(25);
+          .order("created_at", { ascending: true });
 
         if (repliesError) {
           console.error("Error loading replies:", repliesError);
         }
-
-        const displayText = post.text || "";
-        const postTypeMatch = displayText.match(/^\[(.*?)\]\s*(.*)$/);
-        const parsedPostType = postTypeMatch ? postTypeMatch[1] : post.post_type || "Discussion";
-        const parsedText = postTypeMatch ? postTypeMatch[2] : displayText;
-        const reactions = reactionCountsByPost[post.id] || {};
-        const reactionTotal = Object.values(reactions).reduce((sum, value) => sum + Number(value || 0), 0);
 
         return {
           id: post.id,
           user_id: post.user_id,
           name: post.name || "User",
           topic: post.topic || "Mental Health",
-          postType: parsedPostType,
-          text: parsedText,
-          likes: reactionTotal || post.likes || 0,
-          liked: Boolean(userReactionByPost[post.id]),
+          text: post.text || "",
+          likes: post.likes || 0,
+          liked: false,
           shares: post.shares || 0,
-          reactions,
-          userReaction: userReactionByPost[post.id] || null,
-          anonymous: (post.name || "").toLowerCase().includes("anonymous"),
           replies: (repliesData || []).map((reply) => ({
             id: reply.id,
             name: reply.name || "User",
@@ -1225,9 +1175,6 @@ function App() {
 
         body: JSON.stringify({
           message: text,
-          userId: session?.user?.id,
-          email: session?.user?.email,
-          subscriptionStatus,
           checkin: {
             depression,
             anxiety,
@@ -1270,55 +1217,75 @@ function App() {
     }
   }
 
+  const navItems = [
+    ["website", Sparkles, "Home"],
+    ["auth", Users, session ? "Account" : "Login"],
+    ...(isAdmin ? [["admin", BarChart3, "Admin"]] : []),
+    ["home", Home, "Dashboard"],
+    ["checkin", Smile, "Check-In"],
+    ["progress", BarChart3, "Progress"],
+    ["insights", TrendingUp, "Insights"],
+    ["foodlog", Utensils, "Food Log"],
+    ["coach", MessageCircle, "AI Coach"],
+    ["community", Users, "Community"],
+    ["pricing", CreditCard, "Subscription"],
+    ["support", Mail, "Support"],
+    ["legal", ShieldCheck, "Legal"],
+  ];
+
+  const bottomTabs = [
+    ["home", Home, "Home"],
+    ["checkin", Smile, "Check-In"],
+    ["insights", TrendingUp, "Insights"],
+    ["community", Users, "Community"],
+    ["coach", MessageCircle, "Coach"],
+  ];
+
+  const activeBottomScreen = screen === "website" ? "home" : screen;
+
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(255,255,255,0.24),_transparent_28%),linear-gradient(135deg,#001B44,#002B6B,#0047AB)] text-slate-900">
-      <div className="mx-auto max-w-7xl p-4 md:p-8">
-        <header className="flex items-center justify-between mb-6">
-          <Logo />
-          <div className="hidden md:flex items-center gap-3">
-            <div className="flex items-center gap-2 rounded-full bg-white/20 border border-white/40 px-4 py-2 shadow-sm text-sm text-white backdrop-blur">
-              <Sparkles size={16} className="text-blue-600" /> AI wellness platform
+    <div className="min-h-screen bg-[#001B44] text-slate-900 md:bg-[radial-gradient(circle_at_top_left,_rgba(255,255,255,0.24),_transparent_28%),linear-gradient(135deg,#001B44,#002B6B,#0047AB)]">
+      <div className="mx-auto max-w-6xl px-3 pb-28 pt-3 md:p-8">
+        <header className="sticky top-0 z-30 mb-4 rounded-b-[2rem] border border-white/20 bg-[#001B44]/90 px-3 py-3 text-white shadow-lg shadow-blue-950/30 backdrop-blur md:static md:mb-6 md:rounded-none md:border-0 md:bg-transparent md:px-0 md:py-0 md:shadow-none">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Logo compact />
+              <div>
+                <h1 className="text-xl font-black leading-tight md:text-3xl" style={{ color: NAVY }}>
+                  Vitamind
+                </h1>
+                <p className="text-xs text-blue-100 md:text-sm">
+                  {session ? "Your wellness dashboard" : "Wellness connected"}
+                </p>
+              </div>
             </div>
 
-            {session ? (
+            <div className="flex items-center gap-2">
               <button
-                onClick={handleLogout}
-                className="rounded-full bg-[#1D7CFF] text-white px-4 py-2 font-semibold hover:bg-[#0B63CE] transition text-sm shadow-lg shadow-blue-900/20"
+                onClick={() => setScreen(session ? "auth" : "auth")}
+                className="rounded-full border border-white/30 bg-white/15 px-3 py-2 text-xs font-bold text-white backdrop-blur hover:bg-white/25 md:px-4 md:text-sm"
               >
-                Logout
+                {session ? "Account" : "Login"}
               </button>
-            ) : (
-              <button
-                onClick={() => setScreen("auth")}
-                className="rounded-full bg-[#1D7CFF] text-white px-4 py-2 font-semibold hover:bg-[#0B63CE] transition text-sm shadow-lg shadow-blue-900/20"
-              >
-                Login
-              </button>
-            )}
+              {session && (
+                <button
+                  onClick={handleLogout}
+                  className="hidden rounded-full bg-white px-4 py-2 text-sm font-bold text-[#003C8F] shadow-sm hover:bg-blue-50 md:block"
+                >
+                  Logout
+                </button>
+              )}
+            </div>
           </div>
         </header>
 
-        <div className="grid md:grid-cols-4 gap-5">
-          <nav className="bg-[#003C8F]/90 rounded-3xl border border-white/30 p-3 shadow-xl shadow-blue-950/30 h-fit md:col-span-1 backdrop-blur ring-1 ring-white/20">
-            {[
-              ["website", Sparkles, "Home"],
-              ["auth", Users, session ? "Account" : "Login"],
-              ...(isAdmin ? [["admin", BarChart3, "Admin"]] : []),
-              ["home", Home, "Dashboard"],
-              ["checkin", Smile, "Check-In"],
-              ["progress", BarChart3, "Progress"],
-              ["insights", TrendingUp, "Insights"],
-              ["foodlog", Utensils, "Food Log"],
-              ["coach", MessageCircle, "AI Coach"],
-              ["community", Users, "Community"],
-              ["pricing", CreditCard, "Subscription"],
-              ["support", Mail, "Support"],
-              ["legal", ShieldCheck, "Legal"],
-            ].map(([key, Icon, label]) => (
+        <div className="grid gap-5 md:grid-cols-4">
+          <nav className="hidden h-fit rounded-[2rem] border border-white/30 bg-[#003C8F]/90 p-3 shadow-xl shadow-blue-950/30 backdrop-blur ring-1 ring-white/20 md:col-span-1 md:block">
+            {navItems.map(([key, Icon, label]) => (
               <button
                 key={key}
                 onClick={() => setScreen(key)}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl mb-1 font-semibold transition ${
+                className={`mb-1 flex w-full items-center gap-3 rounded-2xl px-4 py-3 font-semibold transition ${
                   screen === key
                     ? "bg-white text-[#003C8F] shadow-md shadow-blue-950/20"
                     : "text-white/90 hover:bg-white/20"
@@ -1330,146 +1297,175 @@ function App() {
           </nav>
 
           <main className="md:col-span-3">
-            {screen === "website" && <Website setScreen={setScreen} startCheckout={startCheckout}
-                manageSubscription={manageSubscription} />}
-            {screen === "auth" && (
-              <AuthScreen
-                session={session}
-                authMode={authMode}
-                setAuthMode={setAuthMode}
-                authEmail={authEmail}
-                setAuthEmail={setAuthEmail}
-                authPassword={authPassword}
-                setAuthPassword={setAuthPassword}
-                newPassword={newPassword}
-                setNewPassword={setNewPassword}
-                authMessage={authMessage}
-                authLoading={authLoading}
-                handleAuth={handleAuth}
-                handleLogout={handleLogout}
-                subscriptionStatus={subscriptionStatus}
-                startCheckout={startCheckout}
-                manageSubscription={manageSubscription}
-                handlePasswordResetRequest={handlePasswordResetRequest}
-                handleUpdatePassword={handleUpdatePassword}
-              />
-            )}
-            {screen === "admin" && isAdmin && (
-              <AdminDashboard
-                adminStats={adminStats}
-                adminLoading={adminLoading}
-                adminError={adminError}
-                loadAdminStats={() => loadAdminStats(session)}
-              />
-            )}
-            {screen === "home" && HAS_ACCESS && (
-              <HomeScreen
-                depression={depression}
-                anxiety={anxiety}
-                stress={stress}
-                motivation={motivation}
-                sleep={sleep}
-                plan={plan}
-                nutritionPlan={nutritionPlan}
-                setScreen={setScreen}
-              />
-            )}
-            {screen === "checkin" && HAS_ACCESS && (
-              <Checkin
-                depression={depression}
-                setDepression={setDepression}
-                anxiety={anxiety}
-                setAnxiety={setAnxiety}
-                stress={stress}
-                setStress={setStress}
-                ptsd={ptsd}
-                setPtsd={setPtsd}
-                traumaStress={traumaStress}
-                setTraumaStress={setTraumaStress}
-                motivation={motivation}
-                setMotivation={setMotivation}
-                inattention={inattention}
-                setInattention={setInattention}
-                impulsivity={impulsivity}
-                setImpulsivity={setImpulsivity}
-                hyperactivity={hyperactivity}
-                setHyperactivity={setHyperactivity}
-                energy={energy}
-                setEnergy={setEnergy}
-                sleep={sleep}
-                setSleep={setSleep}
-                exercise={exercise}
-                setExercise={setExercise}
-                saveCheckin={saveCheckin}
-              />
-            )}
-            {screen === "progress" && HAS_ACCESS && <Progress history={history} />}
-            {screen === "insights" && HAS_ACCESS && (
-              <Insights
-                history={history}
-                foodLog={foodLog}
-                setScreen={setScreen}
-                fitnessPlan={plan}
-                nutritionPlan={nutritionPlan}
-                therapeuticSuggestion={therapeuticSuggestion}
-              />
-            )}
-            {screen === "foodlog" && HAS_ACCESS && (
-              <FoodLog
-                foodEntry={foodEntry}
-                setFoodEntry={setFoodEntry}
-                foodLog={foodLog}
-                addFoodEntry={addFoodEntry}
-              />
-            )}
-            {screen === "coach" && HAS_ACCESS && <Coach messages={messages} input={input} setInput={setInput} send={send} />}
-            {screen === "community" && HAS_ACCESS && <Community posts={posts} setPosts={setPosts} session={session} loadCommunityPosts={loadCommunityPosts} history={history} foodLog={foodLog} />}
-            {screen === "pricing" && <Pricing subscribed={subscribed} setSubscribed={setSubscribed} startCheckout={startCheckout} manageSubscription={manageSubscription} session={session} subscriptionStatus={subscriptionStatus} />}
-            {screen === "legal" && <LegalHub setScreen={setScreen} />}
-            {screen === "privacy" && <PrivacyPolicy />}
-            {screen === "terms" && <TermsOfService />}
-            {screen === "disclaimer" && <MedicalDisclaimer />}
-            {screen === "subscriptionPolicy" && <SubscriptionPolicy />}
-            {screen === "support" && <Support />}
-
-            {!HAS_ACCESS &&
-              screen !== "website" &&
-              screen !== "pricing" &&
-              screen !== "auth" &&
-              screen !== "legal" &&
-              screen !== "privacy" &&
-              screen !== "terms" &&
-              screen !== "disclaimer" &&
-              screen !== "subscriptionPolicy" &&
-              screen !== "admin" && (
-                <Card className="p-10 text-center">
-                  <h2 className="text-4xl font-black mb-4 text-blue-700">
-                    Unlock Vitamind Premium
-                  </h2>
-
-                  <p className="text-slate-600 mb-8 text-lg">
-                    Log in and subscribe to access AI coaching, wellness tracking, personalized insights,
-                    food logs, therapeutic suggestions, and community features.
-                  </p>
-
-                  <button
-                    onClick={startCheckout}
-                    className="inline-block rounded-2xl px-8 py-4 font-bold bg-[#1D7CFF] text-white hover:bg-[#0B63CE] shadow-lg shadow-blue-900/20 transition"
-                  >
-                    Start 7-Day Free Trial
-                  </button>
-                </Card>
+            <div className="space-y-5 rounded-[2rem] md:rounded-none">
+              {screen === "website" && <Website setScreen={setScreen} startCheckout={startCheckout}
+                  manageSubscription={manageSubscription} />}
+              {screen === "auth" && (
+                <AuthScreen
+                  session={session}
+                  authMode={authMode}
+                  setAuthMode={setAuthMode}
+                  authEmail={authEmail}
+                  setAuthEmail={setAuthEmail}
+                  authPassword={authPassword}
+                  setAuthPassword={setAuthPassword}
+                  newPassword={newPassword}
+                  setNewPassword={setNewPassword}
+                  authMessage={authMessage}
+                  authLoading={authLoading}
+                  handleAuth={handleAuth}
+                  handleLogout={handleLogout}
+                  subscriptionStatus={subscriptionStatus}
+                  startCheckout={startCheckout}
+                  manageSubscription={manageSubscription}
+                  handlePasswordResetRequest={handlePasswordResetRequest}
+                  handleUpdatePassword={handleUpdatePassword}
+                />
               )}
+              {screen === "admin" && isAdmin && (
+                <AdminDashboard
+                  adminStats={adminStats}
+                  adminLoading={adminLoading}
+                  adminError={adminError}
+                  loadAdminStats={() => loadAdminStats(session)}
+                />
+              )}
+              {screen === "home" && HAS_ACCESS && (
+                <HomeScreen
+                  depression={depression}
+                  anxiety={anxiety}
+                  stress={stress}
+                  motivation={motivation}
+                  sleep={sleep}
+                  plan={plan}
+                  nutritionPlan={nutritionPlan}
+                  setScreen={setScreen}
+                />
+              )}
+              {screen === "checkin" && HAS_ACCESS && (
+                <Checkin
+                  depression={depression}
+                  setDepression={setDepression}
+                  anxiety={anxiety}
+                  setAnxiety={setAnxiety}
+                  stress={stress}
+                  setStress={setStress}
+                  ptsd={ptsd}
+                  setPtsd={setPtsd}
+                  traumaStress={traumaStress}
+                  setTraumaStress={setTraumaStress}
+                  motivation={motivation}
+                  setMotivation={setMotivation}
+                  inattention={inattention}
+                  setInattention={setInattention}
+                  impulsivity={impulsivity}
+                  setImpulsivity={setImpulsivity}
+                  hyperactivity={hyperactivity}
+                  setHyperactivity={setHyperactivity}
+                  energy={energy}
+                  setEnergy={setEnergy}
+                  sleep={sleep}
+                  setSleep={setSleep}
+                  exercise={exercise}
+                  setExercise={setExercise}
+                  saveCheckin={saveCheckin}
+                />
+              )}
+              {screen === "progress" && HAS_ACCESS && <Progress history={history} />}
+              {screen === "insights" && HAS_ACCESS && (
+                <Insights
+                  history={history}
+                  foodLog={foodLog}
+                  setScreen={setScreen}
+                  fitnessPlan={plan}
+                  nutritionPlan={nutritionPlan}
+                  therapeuticSuggestion={therapeuticSuggestion}
+                />
+              )}
+              {screen === "foodlog" && HAS_ACCESS && (
+                <FoodLog
+                  foodEntry={foodEntry}
+                  setFoodEntry={setFoodEntry}
+                  foodLog={foodLog}
+                  addFoodEntry={addFoodEntry}
+                />
+              )}
+              {screen === "coach" && HAS_ACCESS && <Coach messages={messages} input={input} setInput={setInput} send={send} />}
+              {screen === "community" && HAS_ACCESS && <Community posts={posts} setPosts={setPosts} session={session} loadCommunityPosts={loadCommunityPosts} history={history} foodLog={foodLog} />}
+              {screen === "pricing" && <Pricing subscribed={subscribed} setSubscribed={setSubscribed} startCheckout={startCheckout} manageSubscription={manageSubscription} session={session} subscriptionStatus={subscriptionStatus} />}
+              {screen === "legal" && <LegalHub setScreen={setScreen} />}
+              {screen === "privacy" && <PrivacyPolicy />}
+              {screen === "terms" && <TermsOfService />}
+              {screen === "disclaimer" && <MedicalDisclaimer />}
+              {screen === "subscriptionPolicy" && <SubscriptionPolicy />}
+              {screen === "support" && <Support />}
+
+              {!HAS_ACCESS &&
+                screen !== "website" &&
+                screen !== "pricing" &&
+                screen !== "auth" &&
+                screen !== "legal" &&
+                screen !== "privacy" &&
+                screen !== "terms" &&
+                screen !== "disclaimer" &&
+                screen !== "subscriptionPolicy" &&
+                screen !== "admin" && (
+                  <Card className="p-8 text-center md:p-10">
+                    <h2 className="mb-4 text-3xl font-black text-blue-700 md:text-4xl">
+                      Unlock Vitamind Premium
+                    </h2>
+
+                    <p className="mb-8 text-base text-slate-600 md:text-lg">
+                      Log in and subscribe to access AI coaching, wellness tracking, personalized insights,
+                      food logs, therapeutic suggestions, and community features.
+                    </p>
+
+                    <button
+                      onClick={startCheckout}
+                      className="inline-block rounded-full bg-[#1D7CFF] px-8 py-4 font-bold text-white shadow-lg shadow-blue-900/20 transition hover:bg-[#0B63CE]"
+                    >
+                      Start 7-Day Free Trial
+                    </button>
+                  </Card>
+                )}
+            </div>
           </main>
         </div>
 
+        <div className="hidden md:block">
           <Footer setScreen={setScreen} />
-
+        </div>
       </div>
+
+      <button
+        onClick={() => setScreen("checkin")}
+        className="fixed bottom-24 right-5 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-white text-[#003C8F] shadow-2xl shadow-blue-950/40 ring-4 ring-blue-200 md:hidden"
+        aria-label="Start check-in"
+      >
+        <Smile size={26} />
+      </button>
+
+      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/20 bg-[#001B44]/95 px-2 pb-3 pt-2 shadow-2xl shadow-blue-950/40 backdrop-blur md:hidden">
+        <div className="mx-auto grid max-w-md grid-cols-5 gap-1 rounded-[1.7rem] border border-white/20 bg-white/10 p-1">
+          {bottomTabs.map(([key, Icon, label]) => (
+            <button
+              key={key}
+              onClick={() => setScreen(key)}
+              className={`flex flex-col items-center justify-center rounded-2xl px-1 py-2 text-[11px] font-bold transition ${
+                activeBottomScreen === key
+                  ? "bg-white text-[#003C8F] shadow-sm"
+                  : "text-white/80"
+              }`}
+            >
+              <Icon size={19} />
+              <span className="mt-1 leading-none">{label}</span>
+            </button>
+          ))}
+        </div>
+      </nav>
     </div>
   );
 }
-
 
 
 function AdminDashboard({ adminStats, adminLoading, adminError, loadAdminStats }) {
@@ -3529,10 +3525,6 @@ function Community({ posts, setPosts, session, loadCommunityPosts, history = [],
   const [activeTopic, setActiveTopic] = useState("Feed");
   const [joinedGroups, setJoinedGroups] = useState([]);
   const [joinedChallenges, setJoinedChallenges] = useState([]);
-  const [remoteChallenges, setRemoteChallenges] = useState([]);
-  const [dailyQuestionFromDb, setDailyQuestionFromDb] = useState(null);
-  const [challengeProgress, setChallengeProgress] = useState({});
-  const [communityLoading, setCommunityLoading] = useState(false);
 
   const communityCategories = [
     "Feed",
@@ -3561,18 +3553,15 @@ function Community({ posts, setPosts, session, loadCommunityPosts, history = [],
     "What is one supportive thing you can tell yourself today?",
   ];
 
-  const fallbackQuestion = dailyQuestions[Math.floor(Date.now() / 86400000) % dailyQuestions.length];
-  const todayQuestion = dailyQuestionFromDb?.question || fallbackQuestion;
+  const todayQuestion = dailyQuestions[Math.floor(Date.now() / 86400000) % dailyQuestions.length];
 
-  const defaultChallenges = [
+  const challenges = [
     { name: "7-Day Check-In Challenge", emoji: "🧠", goal: "Complete one mental health check-in daily.", topic: "Challenges" },
     { name: "7-Day Walking Challenge", emoji: "🚶", goal: "Walk at least 10 minutes each day.", topic: "Fitness" },
     { name: "7-Day Hydration Challenge", emoji: "💧", goal: "Drink water with each meal.", topic: "Nutrition" },
     { name: "7-Day Gratitude Challenge", emoji: "🙏", goal: "Write one gratitude statement daily.", topic: "Mental Health" },
     { name: "7-Day Sleep Reset", emoji: "🌙", goal: "Create a calmer wind-down routine.", topic: "Challenges" },
   ];
-
-  const challenges = remoteChallenges.length > 0 ? remoteChallenges : defaultChallenges;
 
   const wellnessWins = [
     "I completed my check-in today.",
@@ -3607,91 +3596,6 @@ function Community({ posts, setPosts, session, loadCommunityPosts, history = [],
     { name: "Mood-Based Nutrition", topic: "Nutrition", members: "1.4k members" },
     { name: "Faith & Wellness", topic: "Faith", members: "900 members" },
   ];
-
-  useEffect(() => {
-    async function loadCommunityExtras() {
-      setCommunityLoading(true);
-
-      try {
-        const today = new Date().toISOString().slice(0, 10);
-
-        const { data: questionData } = await supabase
-          .from("daily_wellness_questions")
-          .select("id, question, category, question_date")
-          .eq("question_date", today)
-          .maybeSingle();
-
-        if (questionData) {
-          setDailyQuestionFromDb(questionData);
-        }
-
-        const { data: challengesData } = await supabase
-          .from("community_challenges")
-          .select("id, title, description, category, start_date, end_date, is_active")
-          .eq("is_active", true)
-          .order("start_date", { ascending: false })
-          .limit(10);
-
-        if (Array.isArray(challengesData) && challengesData.length > 0) {
-          setRemoteChallenges(
-            challengesData.map((challenge) => ({
-              id: challenge.id,
-              name: challenge.title,
-              emoji:
-                challenge.category === "Fitness" ? "🚶" :
-                challenge.category === "Nutrition" ? "💧" :
-                challenge.category === "Sleep" ? "🌙" :
-                challenge.category === "Mindfulness" ? "🙏" : "🧠",
-              goal: challenge.description || "Complete the challenge and check in daily.",
-              topic: "Challenges",
-              category: challenge.category || "Wellness",
-              endDate: challenge.end_date,
-            }))
-          );
-        }
-
-        if (session?.user?.id && Array.isArray(challengesData) && challengesData.length > 0) {
-          const challengeIds = challengesData.map((challenge) => challenge.id);
-          const { data: progressData } = await supabase
-            .from("challenge_progress")
-            .select("challenge_id, progress_count, completed")
-            .eq("user_id", session.user.id)
-            .in("challenge_id", challengeIds);
-
-          if (Array.isArray(progressData)) {
-            setJoinedChallenges(progressData.map((row) => row.challenge_id));
-            setChallengeProgress(
-              progressData.reduce((acc, row) => {
-                acc[row.challenge_id] = row;
-                return acc;
-              }, {})
-            );
-          }
-        }
-      } catch (error) {
-        console.error("Error loading community extras:", error);
-      }
-
-      setCommunityLoading(false);
-    }
-
-    loadCommunityExtras();
-  }, [session?.user?.id]);
-
-  async function saveCommunityFlag({ postId = null, reason, severity = "review", aiDetected = true }) {
-    try {
-      await supabase.from("community_flags").insert({
-        post_id: postId,
-        user_id: session?.user?.id || null,
-        reason,
-        severity,
-        ai_detected: aiDetected,
-        reviewed: false,
-      });
-    } catch (error) {
-      console.error("Error saving community flag:", error);
-    }
-  }
 
   const checkinStreak = Array.isArray(history) ? Math.min(history.length, 30) : 0;
   const foodLogStreak = Array.isArray(foodLog) ? Math.min(foodLog.length, 30) : 0;
@@ -3744,10 +3648,7 @@ function Community({ posts, setPosts, session, loadCommunityPosts, history = [],
     const moderation = moderateText(finalText);
     setModerationNotice(moderation.message);
 
-    if (!moderation.allowed) {
-      await saveCommunityFlag({ reason: moderation.message, severity: "blocked", aiDetected: true });
-      return;
-    }
+    if (!moderation.allowed) return;
 
     const displayName = postAnonymously ? "Anonymous Member" : session?.user?.email?.split("@")[0] || "You";
 
@@ -3829,34 +3730,6 @@ function Community({ posts, setPosts, session, loadCommunityPosts, history = [],
 
     if (post.id) {
       await supabase.from("community_posts").update({ likes: reactionTotal }).eq("id", post.id);
-
-      if (session?.user?.id) {
-        if (sameReaction) {
-          await supabase
-            .from("community_reactions")
-            .delete()
-            .eq("post_id", post.id)
-            .eq("user_id", session.user.id)
-            .eq("reaction_type", reactionKey);
-        } else {
-          if (previousReaction) {
-            await supabase
-              .from("community_reactions")
-              .delete()
-              .eq("post_id", post.id)
-              .eq("user_id", session.user.id);
-          }
-
-          await supabase.from("community_reactions").upsert(
-            {
-              post_id: post.id,
-              user_id: session.user.id,
-              reaction_type: reactionKey,
-            },
-            { onConflict: "post_id,user_id,reaction_type" }
-          );
-        }
-      }
     }
 
     if (reaction && !sameReaction) {
@@ -3875,10 +3748,7 @@ function Community({ posts, setPosts, session, loadCommunityPosts, history = [],
 
     const moderation = moderateText(text);
     setModerationNotice(moderation.message);
-    if (!moderation.allowed) {
-      await saveCommunityFlag({ postId: post?.id || null, reason: moderation.message, severity: "blocked", aiDetected: true });
-      return;
-    }
+    if (!moderation.allowed) return;
 
     const newReply = {
       name: session?.user?.email?.split("@")[0] || "You",
@@ -3946,77 +3816,9 @@ function Community({ posts, setPosts, session, loadCommunityPosts, history = [],
     setJoinedGroups((prev) => (prev.includes(groupName) ? prev.filter((item) => item !== groupName) : [...prev, groupName]));
   }
 
-  async function toggleChallenge(challenge) {
-    const challengeKey = challenge.id || challenge.name;
-
+  function toggleChallenge(challengeName) {
     setJoinedChallenges((prev) =>
-      prev.includes(challengeKey) ? prev.filter((item) => item !== challengeKey) : [...prev, challengeKey]
-    );
-
-    if (!session?.user?.id || !challenge.id) return;
-
-    const alreadyJoined = joinedChallenges.includes(challengeKey);
-
-    try {
-      if (alreadyJoined) {
-        await supabase
-          .from("challenge_progress")
-          .delete()
-          .eq("challenge_id", challenge.id)
-          .eq("user_id", session.user.id);
-      } else {
-        await supabase.from("challenge_progress").upsert(
-          {
-            challenge_id: challenge.id,
-            user_id: session.user.id,
-            progress_count: 0,
-            completed: false,
-            updated_at: new Date().toISOString(),
-          },
-          { onConflict: "challenge_id,user_id" }
-        );
-      }
-    } catch (error) {
-      console.error("Error updating challenge join:", error);
-    }
-  }
-
-  async function checkInChallenge(challenge) {
-    const challengeKey = challenge.id || challenge.name;
-    const currentProgress = challengeProgress[challengeKey]?.progress_count || 0;
-    const nextProgress = currentProgress + 1;
-
-    setJoinedChallenges((prev) => (prev.includes(challengeKey) ? prev : [...prev, challengeKey]));
-    setChallengeProgress((prev) => ({
-      ...prev,
-      [challengeKey]: {
-        challenge_id: challengeKey,
-        progress_count: nextProgress,
-        completed: nextProgress >= 7,
-      },
-    }));
-
-    if (session?.user?.id && challenge.id) {
-      try {
-        await supabase.from("challenge_progress").upsert(
-          {
-            challenge_id: challenge.id,
-            user_id: session.user.id,
-            progress_count: nextProgress,
-            completed: nextProgress >= 7,
-            updated_at: new Date().toISOString(),
-          },
-          { onConflict: "challenge_id,user_id" }
-        );
-      } catch (error) {
-        console.error("Error saving challenge progress:", error);
-      }
-    }
-
-    await addPost(
-      `Checking in for: ${challenge.name}. Progress: ${nextProgress}/7. ${challenge.goal}`,
-      "Challenges",
-      "Challenge Check-In"
+      prev.includes(challengeName) ? prev.filter((item) => item !== challengeName) : [...prev, challengeName]
     );
   }
 
@@ -4271,19 +4073,16 @@ function Community({ posts, setPosts, session, loadCommunityPosts, history = [],
             <h3 className="font-black text-lg mb-4">Community Challenges</h3>
             <div className="space-y-3">
               {challenges.map((challenge) => {
-                const challengeKey = challenge.id || challenge.name;
-                const joined = joinedChallenges.includes(challengeKey);
-                const progress = challengeProgress[challengeKey]?.progress_count || 0;
+                const joined = joinedChallenges.includes(challenge.name);
                 return (
                   <div key={challenge.name} className="rounded-2xl bg-blue-50 border border-blue-100 p-3">
                     <p className="font-black">{challenge.emoji} {challenge.name}</p>
-                    <p className="text-sm text-slate-600 mb-2">{challenge.goal}</p>
-                    {joined && <p className="text-xs font-black text-blue-700 mb-3">Progress: {progress}/7 {progress >= 7 ? "• Completed" : ""}</p>}
+                    <p className="text-sm text-slate-600 mb-3">{challenge.goal}</p>
                     <div className="flex gap-2">
-                      <Button variant={joined ? "primary" : "secondary"} className="py-2 px-3" onClick={() => toggleChallenge(challenge)}>
+                      <Button variant={joined ? "primary" : "secondary"} className="py-2 px-3" onClick={() => toggleChallenge(challenge.name)}>
                         {joined ? "Joined" : "Join"}
                       </Button>
-                      <Button variant="secondary" className="py-2 px-3" onClick={() => checkInChallenge(challenge)}>
+                      <Button variant="secondary" className="py-2 px-3" onClick={() => addPost(`Checking in for: ${challenge.name}. ${challenge.goal}`, "Challenges", "Challenge Check-In")}>
                         Check In
                       </Button>
                     </div>
