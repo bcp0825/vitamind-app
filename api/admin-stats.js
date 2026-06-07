@@ -1,9 +1,13 @@
 import { createClient } from "@supabase/supabase-js";
 
-const supabaseUrl =
-  process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-
+const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+function getTodayISO() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return today.toISOString();
+}
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -11,6 +15,11 @@ export default async function handler(req, res) {
   }
 
   try {
+    const bodySize = JSON.stringify(req.body || {}).length;
+    if (bodySize > 10000) {
+      return res.status(413).json({ error: "Request too large" });
+    }
+
     if (!supabaseUrl) {
       return res.status(500).json({ error: "Missing SUPABASE_URL or VITE_SUPABASE_URL" });
     }
@@ -19,7 +28,11 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: "Missing SUPABASE_SERVICE_ROLE_KEY" });
     }
 
-    const supabase = createClient(supabaseUrl, serviceRoleKey);
+    const supabase = createClient(supabaseUrl, serviceRoleKey, {
+      auth: {
+        persistSession: false,
+      },
+    });
 
     const { userId } = req.body || {};
 
@@ -31,7 +44,7 @@ export default async function handler(req, res) {
       .from("profiles")
       .select("is_admin")
       .eq("id", userId)
-      .single();
+      .maybeSingle();
 
     if (adminError) {
       return res.status(500).json({ error: adminError.message });
@@ -41,54 +54,79 @@ export default async function handler(req, res) {
       return res.status(403).json({ error: "Admin access required" });
     }
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const todayISO = today.toISOString();
+    const todayISO = getTodayISO();
 
-    const { count: totalUsers } = await supabase
-      .from("profiles")
-      .select("*", { count: "exact", head: true });
+    const [
+      totalUsersResult,
+      activeSubscribersResult,
+      checkinsTodayResult,
+      foodLogsTodayResult,
+      communityPostsTodayResult,
+      errorsTodayResult,
+      aiUsageTodayResult,
+      flaggedPostsResult,
+      latestErrorsResult,
+    ] = await Promise.all([
+      supabase.from("profiles").select("id", { count: "estimated", head: true }),
 
-    const { count: activeSubscribers } = await supabase
-      .from("profiles")
-      .select("*", { count: "exact", head: true })
-      .eq("subscription_status", "active");
+      supabase
+        .from("profiles")
+        .select("id", { count: "estimated", head: true })
+        .eq("subscription_status", "active"),
 
-    const { count: checkinsToday } = await supabase
-      .from("checkins")
-      .select("*", { count: "exact", head: true })
-      .gte("created_at", todayISO);
+      supabase
+        .from("checkins")
+        .select("id", { count: "estimated", head: true })
+        .gte("created_at", todayISO),
 
-    const { count: foodLogsToday } = await supabase
-      .from("food_logs")
-      .select("*", { count: "exact", head: true })
-      .gte("created_at", todayISO);
+      supabase
+        .from("food_logs")
+        .select("id", { count: "estimated", head: true })
+        .gte("created_at", todayISO),
 
-    const { count: communityPostsToday } = await supabase
-      .from("community_posts")
-      .select("*", { count: "exact", head: true })
-      .gte("created_at", todayISO);
+      supabase
+        .from("community_posts")
+        .select("id", { count: "estimated", head: true })
+        .gte("created_at", todayISO),
 
-    const { count: errorsToday } = await supabase
-      .from("app_errors")
-      .select("*", { count: "exact", head: true })
-      .gte("created_at", todayISO);
+      supabase
+        .from("app_errors")
+        .select("id", { count: "estimated", head: true })
+        .gte("created_at", todayISO),
 
-    const { data: latestErrors } = await supabase
-      .from("app_errors")
-      .select("id, source, message, email, created_at")
-      .order("created_at", { ascending: false })
-      .limit(10);
+      supabase
+        .from("ai_message_usage")
+        .select("message_count")
+        .gte("usage_date", new Date().toISOString().slice(0, 10)),
+
+      supabase
+        .from("community_posts")
+        .select("id", { count: "estimated", head: true })
+        .eq("flagged", true),
+
+      supabase
+        .from("app_errors")
+        .select("id, source, message, email, created_at")
+        .order("created_at", { ascending: false })
+        .limit(10),
+    ]);
+
+    const aiMessagesToday = (aiUsageTodayResult.data || []).reduce(
+      (sum, row) => sum + Number(row.message_count || 0),
+      0
+    );
 
     return res.status(200).json({
-      totalUsers: totalUsers || 0,
-      activeSubscribers: activeSubscribers || 0,
-      monthlyRevenue: Number(activeSubscribers || 0) * 19.99,
-      checkinsToday: checkinsToday || 0,
-      foodLogsToday: foodLogsToday || 0,
-      communityPostsToday: communityPostsToday || 0,
-      errorsToday: errorsToday || 0,
-      latestErrors: latestErrors || [],
+      totalUsers: totalUsersResult.count || 0,
+      activeSubscribers: activeSubscribersResult.count || 0,
+      monthlyRevenue: Number(activeSubscribersResult.count || 0) * 19.99,
+      checkinsToday: checkinsTodayResult.count || 0,
+      foodLogsToday: foodLogsTodayResult.count || 0,
+      communityPostsToday: communityPostsTodayResult.count || 0,
+      errorsToday: errorsTodayResult.count || 0,
+      aiMessagesToday,
+      flaggedPosts: flaggedPostsResult.count || 0,
+      latestErrors: latestErrorsResult.data || [],
     });
   } catch (error) {
     return res.status(500).json({
