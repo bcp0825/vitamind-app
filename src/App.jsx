@@ -502,8 +502,23 @@ function MobileNavButton({ active, onClick, icon: Icon, label }) {
   );
 }
 
+function getInitialScreenFromPath() {
+  if (typeof window === "undefined") return "website";
+
+  const path = window.location.pathname.toLowerCase();
+
+  if (path === "/privacy" || path === "/privacy-policy") return "privacy";
+  if (path === "/terms" || path === "/terms-of-service") return "terms";
+  if (path === "/medical-disclaimer" || path === "/disclaimer") return "disclaimer";
+  if (path === "/subscription-policy" || path === "/subscriptions") return "subscriptionPolicy";
+  if (path === "/support" || path === "/contact") return "support";
+  if (path === "/legal") return "legal";
+
+  return "website";
+}
+
 function App() {
-  const [screen, setScreen] = useState("website");
+  const [screen, setScreen] = useState(getInitialScreenFromPath);
   const [session, setSession] = useState(null);
   const [subscriptionStatus, setSubscriptionStatus] = useState("inactive");
   const [isAdmin, setIsAdmin] = useState(false);
