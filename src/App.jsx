@@ -487,6 +487,21 @@ const workouts = {
   push: recommendationPools.fitness.push[0],
 };
 
+
+function MobileNavButton({ active, onClick, icon: Icon, label }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`min-h-[82px] rounded-2xl flex flex-col items-center justify-center gap-2 active:scale-95 transition ${
+        active ? "bg-white text-[#003C8F] shadow-md" : "text-white/85"
+      }`}
+    >
+      <Icon size={30} strokeWidth={2.5} />
+      <span className="text-sm font-black leading-none">{label}</span>
+    </button>
+  );
+}
+
 function App() {
   const [screen, setScreen] = useState("website");
   const [session, setSession] = useState(null);
@@ -1296,7 +1311,7 @@ function App() {
             ))}
           </nav>
 
-          <main className="md:col-span-3">
+          <main className="md:col-span-3 pb-36 md:pb-0">
             <div className="space-y-5 rounded-[2rem] md:rounded-none">
               {screen === "website" && <Website setScreen={setScreen} startCheckout={startCheckout}
                   manageSubscription={manageSubscription} />}
@@ -1437,32 +1452,54 @@ function App() {
         </div>
       </div>
 
-      <button
-        onClick={() => setScreen("checkin")}
-        className="fixed bottom-24 right-5 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-white text-[#003C8F] shadow-2xl shadow-blue-950/40 ring-4 ring-blue-200 md:hidden"
-        aria-label="Start check-in"
-      >
-        <Smile size={26} />
-      </button>
+      <div className="fixed bottom-3 left-3 right-3 z-50 md:hidden">
+        <div
+          className="rounded-[28px] border border-white/20 bg-[#001B44]/95 shadow-2xl shadow-blue-950/40 backdrop-blur"
+          style={{ paddingBottom: "calc(12px + env(safe-area-inset-bottom))" }}
+        >
+          <div className="grid grid-cols-5 items-end gap-1 px-2 pt-3">
+            <MobileNavButton
+              active={activeBottomScreen === "home"}
+              onClick={() => setScreen("home")}
+              icon={Home}
+              label="Home"
+            />
 
-      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/20 bg-[#001B44]/95 px-2 pb-3 pt-2 shadow-2xl shadow-blue-950/40 backdrop-blur md:hidden">
-        <div className="mx-auto grid max-w-md grid-cols-5 gap-1 rounded-[1.7rem] border border-white/20 bg-white/10 p-1">
-          {bottomTabs.map(([key, Icon, label]) => (
+            <MobileNavButton
+              active={activeBottomScreen === "insights"}
+              onClick={() => setScreen("insights")}
+              icon={TrendingUp}
+              label="Insights"
+            />
+
             <button
-              key={key}
-              onClick={() => setScreen(key)}
-              className={`flex flex-col items-center justify-center rounded-2xl px-1 py-2 text-[11px] font-bold transition ${
-                activeBottomScreen === key
-                  ? "bg-white text-[#003C8F] shadow-sm"
-                  : "text-white/80"
-              }`}
+              onClick={() => setScreen("checkin")}
+              className="-mt-10 flex flex-col items-center justify-center active:scale-95 transition"
+              aria-label="Start check-in"
             >
-              <Icon size={19} />
-              <span className="mt-1 leading-none">{label}</span>
+              <div className="h-20 w-20 rounded-full bg-[#1D7CFF] text-white flex items-center justify-center shadow-2xl shadow-blue-900/40 border-4 border-white">
+                <Smile size={36} strokeWidth={2.6} />
+              </div>
+
+              <span className="mt-1 text-sm font-black text-white">Check-In</span>
             </button>
-          ))}
+
+            <MobileNavButton
+              active={activeBottomScreen === "community"}
+              onClick={() => setScreen("community")}
+              icon={Users}
+              label="Community"
+            />
+
+            <MobileNavButton
+              active={activeBottomScreen === "coach"}
+              onClick={() => setScreen("coach")}
+              icon={MessageCircle}
+              label="Coach"
+            />
+          </div>
         </div>
-      </nav>
+      </div>
     </div>
   );
 }
