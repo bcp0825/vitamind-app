@@ -1250,10 +1250,10 @@ function App() {
 
   const bottomTabs = [
     ["home", Home, "Home"],
+    ["foodlog", Utensils, "Food"],
     ["checkin", Smile, "Check-In"],
     ["insights", TrendingUp, "Insights"],
     ["community", Users, "Community"],
-    ["coach", MessageCircle, "Coach"],
   ];
 
   const activeBottomScreen = screen === "website" ? "home" : screen;
@@ -1466,10 +1466,10 @@ function App() {
             />
 
             <MobileNavButton
-              active={activeBottomScreen === "insights"}
-              onClick={() => setScreen("insights")}
-              icon={TrendingUp}
-              label="Insights"
+              active={activeBottomScreen === "foodlog"}
+              onClick={() => setScreen("foodlog")}
+              icon={Utensils}
+              label="Food"
             />
 
             <button
@@ -1485,17 +1485,17 @@ function App() {
             </button>
 
             <MobileNavButton
+              active={activeBottomScreen === "insights"}
+              onClick={() => setScreen("insights")}
+              icon={TrendingUp}
+              label="Insights"
+            />
+
+            <MobileNavButton
               active={activeBottomScreen === "community"}
               onClick={() => setScreen("community")}
               icon={Users}
               label="Community"
-            />
-
-            <MobileNavButton
-              active={activeBottomScreen === "coach"}
-              onClick={() => setScreen("coach")}
-              icon={MessageCircle}
-              label="Coach"
             />
           </div>
         </div>
