@@ -1205,6 +1205,9 @@ function App() {
 
         body: JSON.stringify({
           message: text,
+          userId: session?.user?.id || null,
+          email: session?.user?.email || null,
+          subscriptionStatus,
           checkin: {
             depression,
             anxiety,
