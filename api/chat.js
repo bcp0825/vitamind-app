@@ -134,7 +134,7 @@ export default async function handler(req, res) {
     };
 
     const response = await openai.chat.completions.create({
-      model: process.env.OPENAI_MODEL || "gpt-4o-mini",
+      model: "gpt-4o-mini",
       temperature: 0.65,
       max_tokens: 750,
       messages: [
