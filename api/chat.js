@@ -124,9 +124,9 @@ export default async function handler(req, res) {
       });
     }
 
-    if (!process.env.OPENAI_API_KEY) {
+    if (!process.env._API_KEY) {
       return res.status(500).json({
-        error: "Missing OPENAI_API_KEY",
+        error: "Missing _API_KEY",
         reply: "The AI coach is not configured yet.",
       });
     }
@@ -183,8 +183,8 @@ export default async function handler(req, res) {
       exercise: checkin?.exercise ?? null,
     };
 
-    const response = await openai.chat.completions.create({
-      model: process.env.OPENAI_MODEL || "gpt-4o-mini",
+    const response = await .chat.completions.create({
+      model: "gpt-4o-mini",
       temperature: 0.6,
       max_tokens: 550,
       messages: [
