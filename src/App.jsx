@@ -544,9 +544,12 @@ function App() {
   const [sleep, setSleep] = useState(7);
   const [exercise, setExercise] = useState(5);
 
-  // Set this to true only after you add real Stripe login/subscription verification.
-  // For now, false locks premium features and sends users to Stripe.
-  const HAS_ACCESS = subscriptionStatus === "active";
+  // BETA MODE: Keep sign-up/login required, but unlock all app features for logged-in beta users.
+  // Before public paid launch, change BETA_MODE to false.
+  const BETA_MODE = true;
+
+  const HAS_ACCESS =
+    Boolean(session) && (BETA_MODE || subscriptionStatus === "active");
   const [subscribed, setSubscribed] = useState(false);
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState([
@@ -1205,8 +1208,8 @@ function App() {
 
         body: JSON.stringify({
           message: text,
-          userId: session?.user?.id || null,
-          email: session?.user?.email || null,
+          userId: session?.user?.id,
+          email: session?.user?.email,
           subscriptionStatus,
           checkin: {
             depression,
@@ -1425,7 +1428,7 @@ function App() {
               )}
               {screen === "coach" && HAS_ACCESS && <Coach messages={messages} input={input} setInput={setInput} send={send} />}
               {screen === "community" && HAS_ACCESS && <Community posts={posts} setPosts={setPosts} session={session} loadCommunityPosts={loadCommunityPosts} history={history} foodLog={foodLog} />}
-              {screen === "pricing" && <Pricing subscribed={subscribed} setSubscribed={setSubscribed} startCheckout={startCheckout} manageSubscription={manageSubscription} session={session} subscriptionStatus={subscriptionStatus} />}
+              {screen === "pricing" && <Pricing subscribed={subscribed} setSubscribed={setSubscribed} startCheckout={startCheckout} manageSubscription={manageSubscription} session={session} subscriptionStatus={subscriptionStatus} setScreen={setScreen} setAuthMode={setAuthMode} />}
               {screen === "legal" && <LegalHub setScreen={setScreen} />}
               {screen === "privacy" && <PrivacyPolicy />}
               {screen === "terms" && <TermsOfService />}
@@ -1445,19 +1448,22 @@ function App() {
                 screen !== "admin" && (
                   <Card className="p-8 text-center md:p-10">
                     <h2 className="mb-4 text-3xl font-black text-blue-700 md:text-4xl">
-                      Unlock Vitamind Premium
+                      Join the Vitamind Free Beta
                     </h2>
 
                     <p className="mb-8 text-base text-slate-600 md:text-lg">
-                      Log in and subscribe to access AI coaching, wellness tracking, personalized insights,
-                      food logs, therapeutic suggestions, and community features.
+                      Create a free beta account to access AI coaching, wellness tracking, personalized insights,
+                      food logs, therapeutic suggestions, and community features during testing.
                     </p>
 
                     <button
-                      onClick={startCheckout}
+                      onClick={() => {
+                        setAuthMode("signup");
+                        setScreen("auth");
+                      }}
                       className="inline-block rounded-full bg-[#1D7CFF] px-8 py-4 font-bold text-white shadow-lg shadow-blue-900/20 transition hover:bg-[#0B63CE]"
                     >
-                      Start 7-Day Free Trial
+                      Create Free Beta Account
                     </button>
                   </Card>
                 )}
@@ -1599,7 +1605,7 @@ function AdminDashboard({ adminStats, adminLoading, adminError, loadAdminStats }
       <Card className="p-6">
         <h3 className="text-2xl font-black mb-3">Admin Notes</h3>
         <p className="text-slate-600">
-          Monthly revenue is estimated from active subscribers multiplied by $19.99/month.
+          Monthly revenue is estimated from active subscribers multiplied by Freeduring beta.
           Stripe remains the source of truth for exact revenue, refunds, trials, and cancellations.
         </p>
       </Card>
@@ -1713,7 +1719,7 @@ function AuthScreen({
         <p className="text-blue-50 text-lg max-w-3xl">
           {authMode === "forgot"
             ? "Enter your email address and we will send you a password reset link."
-            : "Log in to access Vitamind Premium features, save your wellness history, food logs, and AI coaching experience."}
+            : "Log in to access Vitamind Free Beta features, save your wellness history, food logs, and AI coaching experience."}
         </p>
       </Card>
 
@@ -1826,7 +1832,7 @@ function Website({ setScreen, startCheckout }) {
 
           <div className="flex flex-wrap gap-3">
             <Button onClick={() => setScreen("pricing")} variant="secondary" className="bg-white text-blue-700 hover:bg-blue-50">
-              Start 7-Day Free Trial
+              Join Free Beta
             </Button>
 
             <Button onClick={() => setScreen("checkin")} variant="secondary" className="bg-blue-900/30 text-white hover:bg-blue-900/40">
@@ -1990,7 +1996,7 @@ function Website({ setScreen, startCheckout }) {
           <div>
             <h3 className="text-2xl font-black mb-2">Premium access</h3>
             <p className="text-slate-600">
-              Unlock AI coaching, check-ins, adaptive plans, progress tracking, and community tools with Vitamind Premium.
+              Create a free beta account to unlock AI coaching, check-ins, adaptive plans, progress tracking, and community tools during testing.
             </p>
           </div>
         </div>
@@ -1999,14 +2005,14 @@ function Website({ setScreen, startCheckout }) {
       <Card className="p-6 md:p-8 text-center border-2 border-blue-200">
         <h3 className="text-3xl font-black mb-3">Start your connected wellness journey</h3>
         <p className="text-slate-600 mb-6 max-w-2xl mx-auto">
-          Try Vitamind Premium free for 7 days and begin connecting your mental health, movement, nutrition, and daily support in one place.
+          Join the free Vitamind beta and begin connecting your mental health, movement, nutrition, and daily support in one place.
         </p>
 
         <button
           onClick={startCheckout}
           className="inline-block rounded-2xl px-8 py-4 font-bold bg-[#1D7CFF] text-white hover:bg-[#0B63CE] shadow-lg shadow-blue-900/20 transition"
         >
-          Start 7-Day Free Trial
+          Join Free Beta
         </button>
       </Card>
     </motion.div>
@@ -3455,7 +3461,7 @@ function SubscriptionPolicy() {
   return (
     <LegalPage
       title="Subscription & Cancellation Policy"
-      subtitle="Information about Vitamind Premium billing, cancellation, and access."
+      subtitle="Information about Vitamind Free Beta billing, cancellation, and access."
     >
       <h3 className="text-2xl font-black mb-3">Free Trial</h3>
       <p className="text-slate-700 mb-4">
@@ -3516,27 +3522,27 @@ function Footer({ setScreen }) {
 }
 
 
-function Pricing({ subscribed, setSubscribed, startCheckout, manageSubscription, session, subscriptionStatus }) {
+function Pricing({ subscribed, setSubscribed, startCheckout, manageSubscription, session, subscriptionStatus, setScreen, setAuthMode }) {
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
       <Card className="p-6 bg-gradient-to-r from-blue-700 via-indigo-600 to-sky-500 text-white border-none shadow-2xl shadow-blue-950/20">
-        <p className="text-blue-100 font-semibold mb-2">Vitamind Premium</p>
-        <h2 className="text-4xl font-black mb-3">Unlock your full wellness transformation</h2>
+        <p className="text-blue-100 font-semibold mb-2">Vitamind Free Beta</p>
+        <h2 className="text-4xl font-black mb-3">Join the free beta</h2>
         <p className="text-blue-50 max-w-2xl">Daily mental health check-ins, adaptive workouts, mood-based nutrition, AI coaching, and a supportive wellness community.</p>
       </Card>
 
       <div className="max-w-2xl mx-auto">
         <Card className="p-8 border-2 border-blue-500 shadow-lg relative overflow-hidden">
           <span className="inline-flex rounded-full bg-gradient-to-r from-blue-600 to-teal-500 text-white text-xs font-black px-4 py-2 mb-4">
-            7 Day Free Trial
+            Free Beta Access
           </span>
-          <h3 className="text-4xl font-black mb-2">Vitamind Premium</h3>
+          <h3 className="text-4xl font-black mb-2">Vitamind Free Beta</h3>
           <p className="text-slate-500 mb-6 text-lg">Personalized mind-body wellness coaching designed to improve mental and physical health.</p>
           <div className="flex items-end gap-2 mb-6">
-            <span className="text-6xl font-black">$19.99</span>
-            <span className="text-slate-500 font-semibold mb-2">/month</span>
+            <span className="text-6xl font-black">Free</span>
+            <span className="text-slate-500 font-semibold mb-2">during beta</span>
           </div>
-          <p className="text-blue-700 font-semibold mb-6">Start free for 7 days. Cancel anytime.</p>
+          <p className="text-blue-700 font-semibold mb-6">Free access during beta testing. Paid plans may be added later.</p>
           <ul className="space-y-3 text-slate-700 mb-8 text-lg">
             <li>✓ Full mental health assessments</li>
             <li>✓ Personalized mood-based workouts</li>
@@ -3546,10 +3552,17 @@ function Pricing({ subscribed, setSubscribed, startCheckout, manageSubscription,
             <li>✓ Progress tracking and insights</li>
           </ul>
           <button
-            onClick={startCheckout}
+            onClick={() => {
+              if (session) {
+                setScreen("home");
+              } else {
+                setAuthMode("signup");
+                setScreen("auth");
+              }
+            }}
             className="block w-full text-center rounded-2xl px-4 py-4 font-semibold bg-[#1D7CFF] text-white hover:bg-[#0B63CE] shadow-lg shadow-blue-900/20 transition"
           >
-            {session ? "Start 7-Day Free Trial" : "Login to Start Free Trial"}
+            {session ? "Enter Free Beta" : "Create Free Beta Account"}
           </button>
 
           {session && subscriptionStatus === "active" && (
@@ -3560,7 +3573,7 @@ function Pricing({ subscribed, setSubscribed, startCheckout, manageSubscription,
               Manage / Cancel Subscription
             </button>
           )}
-          {subscribed && <p className="mt-4 text-center text-sm font-bold text-blue-700">Free trial active in prototype.</p>}
+          {subscribed && <p className="mt-4 text-center text-sm font-bold text-blue-700">Free beta access active.</p>}
         </Card>
       </div>
     </motion.div>
